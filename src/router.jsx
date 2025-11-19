@@ -3,9 +3,9 @@
 import { Routes, Route } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
-// we'll add these later:
-// import LoginPage from './pages/LoginPage';
-// import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import AboutPage from "./pages/AboutPage";
 // import JoinLeaguePage from './pages/JoinLeaguePage';
 // import CreateLeaguePage from './pages/CreateLeaguePage';
 // import LeaguePage from './pages/LeaguePage';
@@ -16,8 +16,9 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      {/* <Route path="/login" element={<LoginPage />} /> */}
-      {/* add more routes here as you build pages */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/about" element={<AboutPage />} />
     </Routes>
   );
 }
