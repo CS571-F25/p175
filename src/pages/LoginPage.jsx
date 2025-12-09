@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Container, Form, Button } from "react-bootstrap";
 import { useAuth } from "../context/AuthContext";
+import { authenticateUser } from "../utils/userStorage";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -14,19 +15,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
 
-    // TODO: replace with real auth (Bucket API) later
     if (!username || !password) {
       setErrorMsg("Please enter both username and password.");
       return;
     }
 
-    // fake login for now
-    login();
-    navigate("/");
+    try {
+      const user = await authenticateUser(username, password);
+
+      // store id + username in AuthContext
+      login({ id: user.id, username: user.username });
+
+      navigate("/");
+    } catch (err) {
+      setErrorMsg(err.message || "Login failed. Please try again.");
+    }
   }
 
     return (
@@ -35,25 +42,27 @@ export default function LoginPage() {
         <div>
             <h1 className="mb-4 text-center">LOG IN TO YOUR ACCOUNT</h1>
             <Form onSubmit={handleSubmit} className="w-100">
-                <Form.Group className="mb-3" controlId="login-username">
-                <Form.Control
-                    type="text"
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="rounded-pill px-4 py-3"
-                />
-                </Form.Group>
+            <Form.Group className="mb-3" controlId="login-username">
+              <Form.Control
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="rounded-pill px-4 py-3"
+                autoComplete="username"
+              />
+            </Form.Group>
 
-                <Form.Group className="mb-4" controlId="login-password">
-                <Form.Control
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="rounded-pill px-4 py-3"
-                />
-                </Form.Group>
+            <Form.Group className="mb-4" controlId="login-password">
+              <Form.Control
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="rounded-pill px-4 py-3"
+                autoComplete="current-password"
+              />
+            </Form.Group>
 
                 <Button
                 type="submit"

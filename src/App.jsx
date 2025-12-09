@@ -4,14 +4,17 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import AppNavbar from './layout/AppNavbar';
 import AppRoutes from './router';
+import { AuthProvider } from './context/AuthContext';
 
 
 function App() {
   return (
-    <HashRouter>
-      <AppNavbar />
-      <AppRoutes />
-    </HashRouter>
+    <AuthProvider>
+      <HashRouter>
+        <AppNavbar />
+        <AppRoutes />
+      </HashRouter>
+    </AuthProvider>
   );
 }
 

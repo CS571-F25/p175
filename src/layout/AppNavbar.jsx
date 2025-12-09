@@ -1,16 +1,13 @@
-// Top navigation bar -> Links to home and login pages
-
-import { Navbar, Container, Button } from 'react-bootstrap';
+import { Navbar, Container, Button, NavDropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Home } from 'lucide-react';
 import logo from '../assets/BirdieBoardLogo.png';
 
 export default function AppNavbar() {
-  const { isLoggedIn, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // TODO: Button for logout (must be logged in)
   function handleLogout() {
     logout();
     navigate('/');
@@ -25,7 +22,7 @@ export default function AppNavbar() {
       className="px-3"
     >
       <Container fluid>
-        {/* Left: Home icon, also acts as brand link */}
+        {/* Left: Home icon */}
         <Navbar.Brand
           as={Link}
           to="/"
@@ -44,11 +41,24 @@ export default function AppNavbar() {
           />
         </Navbar.Brand>
 
-        {/* Right: Auth button */}
-        {isLoggedIn ? (
-          <Button variant="primary" onClick={handleLogout}>
-            Logout
-          </Button>
+        {/* Right side: Username or Login/Signup */}
+        {user ? (
+          <NavDropdown
+            title={<span className="text-white">{user.username}</span>}
+            id="user-nav-dropdown"
+            align="end"
+            menuVariant="dark"
+          >
+            <NavDropdown.Item as={Link} to="/my-team">
+              My Team
+            </NavDropdown.Item>
+
+            <NavDropdown.Divider />
+
+            <NavDropdown.Item onClick={handleLogout}>
+              Log Out
+            </NavDropdown.Item>
+          </NavDropdown>
         ) : (
           <Button as={Link} to="/login" variant="primary">
             Log In / Sign Up

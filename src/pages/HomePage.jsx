@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import logo from "../assets/BirdieBoardLogo.png";
 
 export default function HomePage() {
-  const { isLoggedIn } = useAuth();
+  const { user } = useAuth();
 
   return (
     <Container className="text-center mt-5">
@@ -24,7 +24,7 @@ export default function HomePage() {
 
       <Row className="mt-4 d-flex justify-content-center">
         <Col xs="12" md="6" lg="4" className="d-grid gap-3">
-          {!isLoggedIn ? (
+          {!user ? (
             <>
               <Button
                 as={Link}
@@ -51,16 +51,16 @@ export default function HomePage() {
                 variant="primary"
                 size="lg"
               >
-                Create a League
+                Create a Pool
               </Button>
 
               <Button
                 as={Link}
                 to="/join-league"
-                variant="outline-light"
+                variant="primary"
                 size="lg"
               >
-                Join a League
+                Join a Pool
               </Button>
             </>
           )}
