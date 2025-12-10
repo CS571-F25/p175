@@ -2,6 +2,7 @@
 
 import { getUserByUsername, getAllUsers } from "./userStorage";
 import { hashPassword } from "./hashPassword";
+import { addLeagueAndTeamToUser } from "./userStorage";
 
 const BUCKET_LEAGUES_URL = "https://cs571api.cs.wisc.edu/rest/f25/bucket/bb-leagues";
 const BUCKET_TEAMS_URL   = "https://cs571api.cs.wisc.edu/rest/f25/bucket/bb-teams";
@@ -92,6 +93,26 @@ export async function getLeagueById(leagueId) {
   }
 
   return league;
+}
+
+// Get all teams for a given userId
+export async function getTeamsForUser(userId) {
+  const res = await fetch(BUCKET_TEAMS_URL, {
+    method: "GET",
+    headers: COMMON_HEADERS,
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to load teams from Bucket.");
+  }
+
+  const data = await res.json();
+  const results = data.results || {};
+
+  // Flatten + filter by userId
+  return Object.values(results).filter(
+    (t) => t && !Array.isArray(t) && t.userId === userId
+  );
 }
 
 // Get all teams for a given leagueId, with usernames attached
@@ -192,7 +213,14 @@ export async function createLeague({ leagueName, leaguePassword, ownerUsername }
     leagueId: newLeague.leagueId,
   });
 
-  // 6. Return both league and team (so UI can use them later if needed)
+  // 6. Record this league+team on the user document (2b)
+  await addLeagueAndTeamToUser({
+    userId,
+    leagueId: newLeague.leagueId,
+    teamId: team.teamId,
+  });
+
+  // 7. Return both league and team
   return { league: leagueWithBucket, team };
 }
 
@@ -254,8 +282,16 @@ export async function joinLeague({ leagueName, poolPassword, username }) {
   // 5. Add this userId to league.userIds[] in Bucket
   const updatedLeague = await addUserToLeagueInBucket(league, userId);
 
+  // 6. Record this league+team on the user document (2b)
+  await addLeagueAndTeamToUser({
+    userId,
+    leagueId: league.leagueId,
+    teamId: team.teamId,
+  });
+
   return { league: updatedLeague, team };
 }
+
 
 // Update all teams in a league after a draft completes.
 // - draft: the final draft object (with picks[] and leagueId)

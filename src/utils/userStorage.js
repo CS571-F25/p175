@@ -111,3 +111,66 @@ export async function authenticateUser(username, password) {
   return user; // has id, username, leagueIds, teamIds, etc.
 }
 
+// To add leagueIds to bb-user
+export async function addLeagueAndTeamToUser({ userId, leagueId, teamId }) {
+  const res = await fetch(BUCKET_USERS_URL, {
+    method: "GET",
+    headers: COMMON_HEADERS,
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to load users from Bucket.");
+  }
+
+  const data = await res.json();
+  const results = data.results || {};
+
+  let bucketId = null;
+  let userDoc = null;
+
+  for (const [id, value] of Object.entries(results)) {
+    if (value && value.userId === userId) {
+      bucketId = id;
+      userDoc = value;
+      break;
+    }
+  }
+
+  if (!userDoc || !bucketId) {
+    throw new Error("User not found in Bucket.");
+  }
+
+  const existingLeagueIds = Array.isArray(userDoc.leagueIds)
+    ? userDoc.leagueIds
+    : [];
+  const existingTeamIds = Array.isArray(userDoc.teamIds)
+    ? userDoc.teamIds
+    : [];
+
+  const updatedUser = {
+    ...userDoc,
+    leagueIds: existingLeagueIds.includes(leagueId)
+      ? existingLeagueIds
+      : [...existingLeagueIds, leagueId],
+    teamIds:
+      teamId && !existingTeamIds.includes(teamId)
+        ? [...existingTeamIds, teamId]
+        : existingTeamIds,
+  };
+
+  const putRes = await fetch(
+    `${BUCKET_USERS_URL}?id=${encodeURIComponent(bucketId)}`,
+    {
+      method: "PUT",
+      headers: COMMON_HEADERS,
+      body: JSON.stringify(updatedUser),
+    }
+  );
+
+  if (!putRes.ok) {
+    throw new Error("Failed to update user with league/team.");
+  }
+
+  return updatedUser;
+}
+
