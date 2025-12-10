@@ -167,6 +167,18 @@ body {
   flex-direction: column; /* navbar on top, content below */
 }
 
+.bb-draft-board-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.bb-draft-board-intro-text {
+  margin: 0;
+}
+
 /* Left panel */
 .bb-draft-rankings {
   width: 360px;              /* tweak as you like */

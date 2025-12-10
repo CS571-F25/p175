@@ -154,8 +154,8 @@ export default function MyTeamPage() {
             Total Team Score:{" "}
             <span style={{ color: "#2563eb" }}>{totalTeamScore}</span>
           </p>
-          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.95rem" }}>
-            Only your best five golfers count; any dropped score is highlighted in red.
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.65rem" }}>
+            *Only your best five golfers count; any dropped score is highlighted in red.*
           </p>
         </div>
       )}
