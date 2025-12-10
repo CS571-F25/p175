@@ -28,8 +28,9 @@ export default function LoginPage() {
 
     try {
       const user = await authenticateUser(username, password);
-      login({ id: user.id || user.userId, username: user.username });
+      const normalizedId = user.id || user.userId;
 
+      login({ id: normalizedId, userId: normalizedId, username: user.username });
       const leagues = await getLeaguesForUser(user.id || user.userId);
 
       if (leagues.length > 0) {

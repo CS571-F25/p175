@@ -33,7 +33,8 @@ export default function RegisterPage() {
 
     try {
       const newUser = await createUser({ username, password });
-      login({ id: newUser.id, username: newUser.username });
+      // Store the generated userId immediately so owner checks work without requiring re-login
+      login({ id: newUser.userId, userId: newUser.userId, username: newUser.username });
       navigate("/");
     } catch (err) {
       setErrorMsg(err.message || "Something went wrong creating your account.");
