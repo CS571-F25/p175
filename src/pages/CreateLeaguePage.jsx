@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Container, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { createLeague } from "../utils/leagueandTeamStorage";
+import { createLeague } from "../utils/leagueAndTeamStorage";
 
 export default function CreateLeaguePage() {
   const navigate = useNavigate();
@@ -29,20 +29,20 @@ export default function CreateLeaguePage() {
     }
 
     try {
-      const newLeague = await createLeague({
-        ownerUsername: user.username,  // or user.userId later
+        const { league, team } = await createLeague({
+        ownerUsername: user.username,
         leagueName,
         leaguePassword: poolPassword,
-      });
+        });
 
-      console.log("Created league:", newLeague);
+        console.log("Created league:", league);
+        console.log("Created team for owner:", team);
 
-      // TODO later: createTeamForUserInLeague(user, newLeague)
-      // and navigate to that league's page, e.g.:
-      // navigate(`/league/${newLeague.leagueId}`);
-
-      // For now, just go home
-      navigate("/");
+      // Navigate to league page on success
+        navigate(`/league/${league.leagueId}`, {
+          state: { leagueName: league.leagueName },
+        });
+        
     } catch (err) {
       setErrorMsg(err.message || "Something went wrong creating your league.");
     }

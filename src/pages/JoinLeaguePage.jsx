@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Container, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { joinLeague } from "../utils/leagueandTeamStorage";
+import { joinLeague } from "../utils/leagueAndTeamStorage";
 
 export default function JoinLeaguePage() {
   const navigate = useNavigate();
@@ -41,10 +41,11 @@ export default function JoinLeaguePage() {
       console.log("Joined league:", league);
       console.log("Created team:", team);
 
-      // For now, just go back to home.
-      // Later you can navigate to a league lobby/draft page:
-      // navigate(`/league/${league.leagueId}`);
-      navigate("/");
+      // Go to league page on success
+      navigate(`/league/${league.leagueId}`, {
+        state: { leagueName: league.leagueName },
+      });
+
     } catch (err) {
       setErrorMsg(err.message || "Failed to join pool.");
     } finally {

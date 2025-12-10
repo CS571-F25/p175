@@ -1,6 +1,7 @@
 // Buckets for leagues and teams
 
-import { getUserByUsername } from "./userStorage";
+import { getUserByUsername, getAllUsers } from "./userStorage";
+import { hashPassword } from "./hashPassword";
 
 const BUCKET_LEAGUES_URL = "https://cs571api.cs.wisc.edu/rest/f25/bucket/bb-leagues";
 const BUCKET_TEAMS_URL   = "https://cs571api.cs.wisc.edu/rest/f25/bucket/bb-teams";
@@ -42,22 +43,135 @@ export async function getLeagueByName(leagueName) {
   );
 }
 
+// Helper to finds leagues for user when they login
+export async function getLeaguesForUser(userId) {
+  const leagues = await getAllLeagues();
+  return leagues.filter(l => Array.isArray(l.userIds) && l.userIds.includes(userId));
+}
+
+// Add a userId to a league's userIds[] in Bucket
+// Add a userId to a league's userIds[] in Bucket
+async function addUserToLeagueInBucket(league, userId) {
+  const currentUserIds = Array.isArray(league.userIds) ? league.userIds : [];
+
+  // Avoid duplicates
+  if (currentUserIds.includes(userId)) {
+    return league;
+  }
+
+  const updatedLeague = {
+    ...league,
+    userIds: [...currentUserIds, userId],
+  };
+
+  const { bucketId, ...body } = updatedLeague; // strip bucketId before sending
+
+  const res = await fetch(
+    `${BUCKET_LEAGUES_URL}?id=${encodeURIComponent(league.bucketId)}`,
+    {
+      method: "PUT",
+      headers: COMMON_HEADERS,
+      body: JSON.stringify(body),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to update league members in Bucket.");
+  }
+
+  return updatedLeague;
+}
+
+// Find a league by its leagueId
+export async function getLeagueById(leagueId) {
+  const leagues = await getAllLeagues();
+  const league = leagues.find((l) => l.leagueId === leagueId);
+
+  if (!league) {
+    throw new Error("League not found.");
+  }
+
+  return league;
+}
+
+// Get all teams for a given leagueId, with usernames attached
+export async function getTeamsForLeague(leagueId) {
+  // 1. Fetch all teams from bb-teams
+  const res = await fetch(BUCKET_TEAMS_URL, {
+    method: "GET",
+    headers: COMMON_HEADERS,
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to load teams from Bucket.");
+  }
+
+  const data = await res.json();
+  const results = data.results || {};
+
+  // Flatten bucket shape -> array of teams
+  const allTeams = Object.entries(results)
+    .filter(([, value]) => value && !Array.isArray(value))
+    .map(([bucketId, team]) => ({
+      ...team,
+      bucketId,
+    }));
+
+  // Only keep teams for this league
+  const leagueTeams = allTeams.filter((t) => t.leagueId === leagueId);
+
+  // 2. Get all users, build a lookup from userId -> username
+  const users = await getAllUsers();
+  const userById = new Map(
+    users.map((u) => [u.userId || u.id, u])
+  );
+
+  // 3. Attach displayName + normalize totalScore
+  const withNames = leagueTeams.map((t) => {
+    const user = userById.get(t.userId);
+    const username = user?.username || "Unknown";
+
+    return {
+      ...t,
+      id: t.teamId || t.id,
+      displayName: username,
+      totalScore:
+        typeof t.totalScore === "number"
+          ? t.totalScore
+          : Number(t.totalScore) || 0,
+    };
+  });
+
+  // 4. Sort by score (lower is better in golf)
+  withNames.sort((a, b) => a.totalScore - b.totalScore);
+
+  return withNames;
+}
+
 // Create league
 export async function createLeague({ leagueName, leaguePassword, ownerUsername }) {
+  // 1. Look up the owner
   const owner = await getUserByUsername(ownerUsername);
   if (!owner) {
     throw new Error("Owner user not found.");
   }
 
+  const userId = owner.userId || owner.id;
+
+  // 2. Hash the password before storing it
+  const leaguePasswordHash = await hashPassword(leaguePassword);
+
+  // 3. Build the league object
   const newLeague = {
     leagueId: crypto.randomUUID(),
-    ownerId: owner.userId || owner.id,
+    ownerId: userId,
     leagueName,
-    leaguePassword,
-    userIds: [owner.userId || owner.id],
+    leaguePassword: leaguePasswordHash,
+    userIds: [userId],
     createdAt: new Date().toISOString(),
   };
 
+  // 4. Save league to Bucket
   const res = await fetch(BUCKET_LEAGUES_URL, {
     method: "POST",
     headers: COMMON_HEADERS,
@@ -68,9 +182,19 @@ export async function createLeague({ leagueName, leaguePassword, ownerUsername }
     throw new Error("Failed to create league in Bucket.");
   }
 
-  const data = await res.json(); // Bucket usually echoes back an object, possibly with an id
-  return { ...newLeague, bucketId: data.id ?? undefined };
+  const data = await res.json();
+  const leagueWithBucket = { ...newLeague, bucketId: data.id ?? undefined };
+
+  // 5. Create a team for the owner in this league
+  const team = await createTeamForUserInLeague({
+    userId,
+    leagueId: newLeague.leagueId,
+  });
+
+  // 6. Return both league and team (so UI can use them later if needed)
+  return { league: leagueWithBucket, team };
 }
+
 
 // Helper to create a team for a user in a league
 async function createTeamForUserInLeague({ userId, leagueId }) {
@@ -96,8 +220,7 @@ async function createTeamForUserInLeague({ userId, leagueId }) {
   return { ...newTeam, bucketId: data.id ?? undefined };
 }
 
-// --- Main: Join league ---
-
+// Join League
 export async function joinLeague({ leagueName, poolPassword, username }) {
   // 1. Find the league by name
   const league = await getLeagueByName(leagueName);
@@ -105,8 +228,9 @@ export async function joinLeague({ leagueName, poolPassword, username }) {
     throw new Error("No pool found with that name.");
   }
 
-  // 2. Check password
-  if (league.leaguePassword !== poolPassword) {
+  // 2. Hash the entered password and compare to stored hash
+  const poolPasswordHash = await hashPassword(poolPassword);
+  if (league.leaguePassword !== poolPasswordHash) {
     throw new Error("Incorrect pool password.");
   }
 
@@ -118,17 +242,14 @@ export async function joinLeague({ leagueName, poolPassword, username }) {
 
   const userId = user.userId || user.id;
 
-  // 4. (Optional) In a full version, you'd check if this user already has a team
-  // in this league to prevent duplicates. We'll skip that for now.
-
-  // 5. Create a team for this user in this league
+  // 4. Create a team for this user in this league
   const team = await createTeamForUserInLeague({
     userId,
     leagueId: league.leagueId,
   });
 
-  // 6. You *could* also update league.userIds and user.leagueIds/teamIds here
-  // via PUT calls to Bucket. You said you're okay skipping that for now.
+  // 5. Add this userId to league.userIds[] in Bucket
+  const updatedLeague = await addUserToLeagueInBucket(league, userId);
 
-  return { league, team };
+  return { league: updatedLeague, team };
 }

@@ -6,6 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Container, Form, Button } from "react-bootstrap";
 import { useAuth } from "../context/AuthContext";
 import { authenticateUser } from "../utils/userStorage";
+import { getLeaguesForUser } from "../utils/leagueAndTeamStorage";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -15,26 +16,40 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setErrorMsg("");
+async function handleSubmit(e) {
+  e.preventDefault();
+  setErrorMsg("");
 
-    if (!username || !password) {
-      setErrorMsg("Please enter both username and password.");
-      return;
-    }
-
-    try {
-      const user = await authenticateUser(username, password);
-
-      // store id + username in AuthContext
-      login({ id: user.id, username: user.username });
-
-      navigate("/");
-    } catch (err) {
-      setErrorMsg(err.message || "Login failed. Please try again.");
-    }
+  if (!username || !password) {
+    setErrorMsg("Please enter both username and password.");
+    return;
   }
+
+  try {
+    // 1. Authenticate
+    const user = await authenticateUser(username, password);
+
+    // 2. Store login in global AuthContext
+    login({ id: user.id || user.userId, username: user.username });
+
+    // 3. Check which leagues they are in
+    const leagues = await getLeaguesForUser(user.id || user.userId);
+
+    if (leagues.length > 0) {
+      // Automatically redirect to the FIRST league they belong to
+      const league = leagues[0];
+      navigate(`/league/${league.leagueId}`, {
+        state: { leagueName: league.leagueName },
+      });
+    } else {
+      // No leagues, send to homepage
+      navigate("/");
+    }
+
+  } catch (err) {
+    setErrorMsg(err.message || "Login failed. Please try again.");
+  }
+}
 
     return (
     <div>
