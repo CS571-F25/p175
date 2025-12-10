@@ -143,20 +143,17 @@ body {
 .bb-draft-main {
   flex: 1;
   display: flex;
-  overflow: hidden;
+  overflow: hidden;  
   height: calc(100vh - var(--bb-draft-top-offset));
 }
 
 .bb-draft-page {
-  --bb-draft-top-offset: 120px;
   width: 100vw;
   margin-left: calc(50% - 50vw);
-  min-height: 100vh;
+  min-height: calc(100vh - 70px); /* main navbar height */
   background-color: #f3f4f6;
   display: flex;
-  padding-top: var(--bb-draft-top-offset);
-  box-sizing: border-box;
-  overflow: hidden;
+  padding-top: 50px;
   flex-direction: column; /* navbar on top, content below */
 }
 
@@ -172,7 +169,7 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - 140px);
 
 
 }
@@ -257,8 +254,7 @@ body {
   padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  height: 100%;
+  overflow-y: auto;  
 }
 
 .bb-draft-board-title {
@@ -276,13 +272,6 @@ body {
   align-items: center;
   justify-content: center;
   color: #6b7280;
-}
-
-.bb-draft-board-live-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
 /*///////////////////////////////////////*/
