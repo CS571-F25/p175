@@ -49,8 +49,14 @@ export default function AppNavbar() {
             align="end"
             menuVariant="dark"
           >
+            <NavDropdown.Item as={Link} to="/my-league">
+              Leaderboard
+            </NavDropdown.Item>
             <NavDropdown.Item as={Link} to="/my-team">
               My Team
+            </NavDropdown.Item>
+            <NavDropdown.Item as={Link} to="/my-draft">
+              Draftboard
             </NavDropdown.Item>
 
             <NavDropdown.Divider />

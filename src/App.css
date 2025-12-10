@@ -400,3 +400,15 @@
   font-size: 0.9rem;
   color: #6b7280;
 }
+
+.bb-now-drafting-text {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1f2937; /* slate-800 */
+}
+
+.bb-now-drafting-name {
+  color: #2563eb; /* blue-600 */
+}

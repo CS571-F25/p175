@@ -7,8 +7,8 @@ export default function LeagueNavbar({ active = "leaderboard" }) {
   function goTo(tab) {
     if (tab === "leaderboard") {
       navigate(`/league/${leagueId}`);
-    } else if (tab === "my-team") {
-      navigate(`/league/${leagueId}/my-team`);
+    } else if (tab === "team") {
+      navigate(`/league/${leagueId}/team`);
     } else if (tab === "draft") {
       navigate(`/league/${leagueId}/draft`);
     }
@@ -27,9 +27,9 @@ export default function LeagueNavbar({ active = "leaderboard" }) {
 
       <button
         className={`bb-subnav-link ${
-          active === "my-team" ? "bb-subnav-link-active" : ""
+          active === "team" ? "bb-subnav-link-active" : ""
         }`}
-        onClick={() => goTo("my-team")}
+        onClick={() => goTo("team")}
       >
         My Team
       </button>

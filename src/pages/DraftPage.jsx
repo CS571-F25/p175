@@ -1,3 +1,4 @@
+// src/pages/DraftPage.jsx
 // Page that displays draft
 
 import { useEffect, useMemo, useState } from "react";
@@ -7,20 +8,20 @@ import DraftRankingsPanel from "../components/DraftRankingsPanel";
 import LeagueNavbar from "../components/LeagueNavbar";
 import DraftBoardIntro from "../components/DraftBoardIntro";
 import LiveDraftBoard from "../components/LiveDraftBoard";
+
 import { getAllGolfers } from "../utils/golferStorage";
 import { getTeamsForLeague, getLeagueById } from "../utils/leagueAndTeamStorage";
 import { useAuth } from "../context/AuthContext";
-import { createDraftForLeague } from "../utils/draftStorage";
-
+import {
+  createDraftForLeague,
+  getDraftForLeague,
+} from "../utils/draftStorage";
 
 export default function DraftPage() {
   const { leagueId } = useParams();
-  const [league, setLeague] = useState(null);
-  const [draft, setDraft] = useState(null);
-  const [loadingLeague, setLoadingLeague] = useState(true);
+  const { user } = useAuth();
 
-  // TODO: replace with real "whose turn is it" logic
-  const [isMyTurn] = useState(true);
+  const [league, setLeague] = useState(null);
 
   const [golfersRaw, setGolfersRaw] = useState([]);
   const [loadingGolfers, setLoadingGolfers] = useState(true);
@@ -28,14 +29,13 @@ export default function DraftPage() {
   const [teams, setTeams] = useState([]);
   const [loadingTeams, setLoadingTeams] = useState(true);
 
-  const [draftStarted, setDraftStarted] = useState(false);
+  const [draft, setDraft] = useState(null);
+  const [loadingDraft, setLoadingDraft] = useState(true);
+
   const [draftError, setDraftError] = useState("");
-
-  const { user } = useAuth();
-
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Load golfers from bb-golfers
+  // ---- Load golfers ----
   useEffect(() => {
     let cancelled = false;
 
@@ -61,16 +61,14 @@ export default function DraftPage() {
     }
 
     loadGolfers();
-
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // Load teams for this league
+  // ---- Load teams for this league ----
   useEffect(() => {
     if (!leagueId) return;
-
     let cancelled = false;
 
     async function loadTeams() {
@@ -84,7 +82,6 @@ export default function DraftPage() {
       } catch (err) {
         if (!cancelled) {
           console.error(err);
-          // Reuse the same errorMsg area for now
           setErrorMsg(err.message || "Failed to load league teams.");
         }
       } finally {
@@ -95,42 +92,78 @@ export default function DraftPage() {
     }
 
     loadTeams();
-
     return () => {
       cancelled = true;
     };
   }, [leagueId]);
 
-    // Load leagues from bb-leageus
+  // ---- Load league info ----
   useEffect(() => {
-  if (!leagueId) return;
+    if (!leagueId) return;
+    let cancelled = false;
 
+    async function loadLeague() {
+      try {
+        const lg = await getLeagueById(leagueId);
+        if (!cancelled) {
+          setLeague(lg);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          setErrorMsg("Failed to load league.");
+        }
+      }
+    }
+
+    loadLeague();
+    return () => {
+      cancelled = true;
+    };
+  }, [leagueId]);
+
+// ---- Load + poll draft for this league ----
+useEffect(() => {
+  if (!leagueId) return;
   let cancelled = false;
 
-  async function loadLeague() {
+  async function loadDraftOnce({ showSpinner = false } = {}) {
     try {
-      setLoadingLeague(true);
-      const lg = await getLeagueById(leagueId);
+      if (showSpinner) {
+        setLoadingDraft(true);
+      }
+
+      const existing = await getDraftForLeague(leagueId);
       if (!cancelled) {
-        setLeague(lg);
+        setDraft(existing);
       }
     } catch (err) {
       if (!cancelled) {
         console.error(err);
-        setErrorMsg("Failed to load league.");
+        // optional: setErrorMsg once here if you want
       }
     } finally {
-      if (!cancelled) {
-        setLoadingLeague(false);
+      if (!cancelled && showSpinner) {
+        setLoadingDraft(false);
       }
     }
   }
 
-  loadLeague();
-  return () => { cancelled = true };
+  // initial load: show spinner
+  loadDraftOnce({ showSpinner: true });
+
+  // poll every 15s in the background (no spinner)
+  const intervalId = setInterval(() => {
+    loadDraftOnce({ showSpinner: false });
+  }, 15000);
+
+  return () => {
+    cancelled = true;
+    clearInterval(intervalId);
+  };
 }, [leagueId]);
 
-  // Sort golfers
+  // ---- Derived data ----
   const golfers = useMemo(
     () =>
       [...golfersRaw].sort(
@@ -139,9 +172,12 @@ export default function DraftPage() {
     [golfersRaw]
   );
 
+  const draftStarted = !!draft && draft.inProgress;
+
+  // ---- Handlers ----
   function handleDraft(golfer) {
     console.log("Drafting golfer: ", golfer);
-    // later: call bucket to mark golfer drafted + update team, board, etc.
+    // later: update draft + team via updateDraftInBucket
   }
 
   async function handleStartDraft() {
@@ -155,10 +191,11 @@ export default function DraftPage() {
     try {
       setDraftError("");
 
-      const newDraft = await createDraftForLeague(league.leagueId);
-      setDraft(newDraft);
-      setDraftStarted(true);
+      // team order (for now: whatever order teams are in; later you can randomize)
+      const teamOrder = teams.map((t) => t.teamId || t.id);
 
+      const newDraft = await createDraftForLeague(league.leagueId, teamOrder);
+      setDraft(newDraft); // our own page updates immediately
       console.log("Draft created:", newDraft);
     } catch (err) {
       console.error(err);
@@ -166,19 +203,22 @@ export default function DraftPage() {
     }
   }
 
-  const isLoadingAnything = loadingGolfers || loadingTeams || loadingLeague;
+  const isLoadingAnything = loadingGolfers || loadingTeams || loadingDraft;
 
+  // ---- Render ----
   return (
     <div className="bb-draft-page">
       <LeagueNavbar active="draft" />
 
       <div className="bb-draft-main">
+        {/* Left panel: Rankings */}
         <DraftRankingsPanel
           golfers={golfers}
           canDraft={true}
           onDraft={handleDraft}
         />
 
+        {/* Right panel: Draft Board shell */}
         <main className="bb-draft-board-shell">
           <h2 className="bb-draft-board-title">Draft Board</h2>
 
@@ -194,7 +234,6 @@ export default function DraftPage() {
             </div>
           )}
 
-          {/* Intro state – draft not started yet */}
           {!isLoadingAnything && !errorMsg && !draftStarted && (
             <div className="bb-draft-board-placeholder">
               <DraftBoardIntro
@@ -205,10 +244,11 @@ export default function DraftPage() {
             </div>
           )}
 
-          {/* Live draft state */}
           {!isLoadingAnything && !errorMsg && draftStarted && (
-            // Use the full area instead of the dashed placeholder box
-            <LiveDraftBoard draft={draft} teams={teams} />
+            <div className="bb-draft-board-placeholder">
+              {/* Wire your actual grid here */}
+              <LiveDraftBoard draft={draft} teams={teams} />
+            </div>
           )}
         </main>
       </div>
