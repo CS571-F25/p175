@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Container, Form, Button } from "react-bootstrap";
+import { Form, Button } from "react-bootstrap";
 import { useAuth } from "../context/AuthContext";
 import { authenticateUser } from "../utils/userStorage";
 import { getLeaguesForUser } from "../utils/leagueAndTeamStorage";
+import AuthFormLayout from "../components/AuthFormLayout";
+import LabeledInput from "../components/LabeledInput";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -15,92 +17,79 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-async function handleSubmit(e) {
-  e.preventDefault();
-  setErrorMsg("");
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setErrorMsg("");
 
-  if (!username || !password) {
-    setErrorMsg("Please enter both username and password.");
-    return;
-  }
-
-  try {
-    // 1. Authenticate
-    const user = await authenticateUser(username, password);
-
-    // 2. Store login in global AuthContext
-    login({ id: user.id || user.userId, username: user.username });
-
-    // 3. Check which leagues they are in
-    const leagues = await getLeaguesForUser(user.id || user.userId);
-
-    if (leagues.length > 0) {
-      // Automatically redirect to the FIRST league they belong to
-      const league = leagues[0];
-      navigate(`/league/${league.leagueId}`, {
-        state: { leagueName: league.leagueName },
-      });
-    } else {
-      // No leagues, send to homepage
-      navigate("/");
+    if (!username || !password) {
+      setErrorMsg("Please enter both username and password.");
+      return;
     }
 
-  } catch (err) {
-    setErrorMsg(err.message || "Login failed. Please try again.");
+    try {
+      const user = await authenticateUser(username, password);
+      login({ id: user.id || user.userId, username: user.username });
+
+      const leagues = await getLeaguesForUser(user.id || user.userId);
+
+      if (leagues.length > 0) {
+        const league = leagues[0];
+        navigate(`/league/${league.leagueId}`, {
+          state: { leagueName: league.leagueName },
+        });
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      setErrorMsg(err.message || "Login failed. Please try again.");
+    }
   }
-}
 
-    return (
-    <div>
-        <Container className="d-flex flex-column align-items-center justify-content-center min-vh-100">
-        <div>
-            <h1 className="mb-4 text-center">LOG IN TO YOUR ACCOUNT</h1>
-            <Form onSubmit={handleSubmit} className="w-100">
-            <Form.Group className="mb-3" controlId="login-username">
-              <Form.Control
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="rounded-pill px-4 py-3"
-                autoComplete="username"
-              />
-            </Form.Group>
+  return (
+    <AuthFormLayout
+      title="Log in to your account"
+      subtitle="Access your pools, drafts, and leaderboards"
+      footer={
+        <p className="mb-0">
+          Don’t have an account? <Link to="/register">Sign up</Link>
+        </p>
+      }
+    >
+      <Form onSubmit={handleSubmit} noValidate>
+        <LabeledInput
+          id="login-username"
+          label="Username"
+          type="text"
+          placeholder="Enter username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          autoComplete="username"
+        />
 
-            <Form.Group className="mb-4" controlId="login-password">
-              <Form.Control
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="rounded-pill px-4 py-3"
-                autoComplete="current-password"
-              />
-            </Form.Group>
+        <LabeledInput
+          id="login-password"
+          label="Password"
+          type="password"
+          placeholder="Enter password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+        />
 
-                <Button
-                type="submit"
-                className="w-100 rounded-pill py-2"
-                variant="primary"
-                >
-                Log In
-                </Button>
+        {errorMsg && (
+          <div className="text-danger small mb-2" role="alert">
+            {errorMsg}
+          </div>
+        )}
 
-                {errorMsg && (
-                <div className="text-danger small mt-2 text-center">
-                    {errorMsg}
-                </div>
-                )}
-            </Form>
-
-            <p className="mt-4 text-center">
-                Don’t have an account?{" "}
-                <Link to="/register">
-                Sign up
-                </Link>
-            </p>
-        </div>
-      </Container>
-    </div>
+        <Button
+          type="submit"
+          className="w-100 rounded-pill py-2 mt-2"
+          variant="primary"
+        >
+          Log In
+        </Button>
+      </Form>
+    </AuthFormLayout>
   );
 }

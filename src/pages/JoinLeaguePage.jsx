@@ -1,10 +1,13 @@
 // Page to join an existing league via code/ID
 
 import { useState } from "react";
-import { Container, Form, Button } from "react-bootstrap";
+import { Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { joinLeague } from "../utils/leagueAndTeamStorage";
+import PageContainer from "../components/PageContainer";
+import PageHeader from "../components/PageHeader";
+import LabeledInput from "../components/LabeledInput";
 
 export default function JoinLeaguePage() {
   const navigate = useNavigate();
@@ -41,11 +44,9 @@ export default function JoinLeaguePage() {
       console.log("Joined league:", league);
       console.log("Created team:", team);
 
-      // Go to league page on success
       navigate(`/league/${league.leagueId}`, {
         state: { leagueName: league.leagueName },
       });
-
     } catch (err) {
       setErrorMsg(err.message || "Failed to join pool.");
     } finally {
@@ -57,42 +58,40 @@ export default function JoinLeaguePage() {
     navigate(-1);
   }
 
-   return (
-    <Container className="text-center mt-5" style={{ maxWidth: "800px" }}>
-      {/* Title */}
-      <h1 className="mb-2">Join an existing</h1>
-      <h1 className="mb-4">PGA Draft Pool</h1>
+  return (
+    <PageContainer className="mt-5" style={{ maxWidth: "760px" }}>
+      <PageHeader
+        title="Join an existing PGA Draft Pool"
+        subtitle="Enter the league name and password shared by the organizer"
+        align="center"
+      />
 
-      {/* Form wrapper */}
-      <div style={{ maxWidth: "450px", margin: "0 auto" }}>
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3 text-start" controlId="join-pool-name">
-            <Form.Label>Pool Name</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter pool name"
-              value={poolName}
-              onChange={(e) => setPoolName(e.target.value)}
-              className="rounded-pill px-4 py-3"
-            />
-          </Form.Group>
+      <div style={{ maxWidth: "520px", margin: "0 auto" }}>
+        <Form onSubmit={handleSubmit} aria-label="Join pool form">
+          <LabeledInput
+            id="join-pool-name"
+            label="Pool Name"
+            type="text"
+            placeholder="Enter pool name"
+            value={poolName}
+            onChange={(e) => setPoolName(e.target.value)}
+            className="rounded-pill px-4 py-3"
+          />
 
-          <Form.Group
-            className="mb-3 text-start"
-            controlId="join-pool-password"
-          >
-            <Form.Label>Pool Password</Form.Label>
-            <Form.Control
-              type="password"
-              placeholder="Enter pool password"
-              value={poolPassword}
-              onChange={(e) => setPoolPassword(e.target.value)}
-              className="rounded-pill px-4 py-3"
-            />
-          </Form.Group>
+          <LabeledInput
+            id="join-pool-password"
+            label="Pool Password"
+            type="password"
+            placeholder="Enter pool password"
+            value={poolPassword}
+            onChange={(e) => setPoolPassword(e.target.value)}
+            className="rounded-pill px-4 py-3"
+          />
 
           {errorMsg && (
-            <div className="text-danger small mb-2 text-start">{errorMsg}</div>
+            <div className="text-danger small mb-2" role="alert">
+              {errorMsg}
+            </div>
           )}
 
           <Button
@@ -114,6 +113,6 @@ export default function JoinLeaguePage() {
           </Button>
         </Form>
       </div>
-    </Container>
+    </PageContainer>
   );
 }
