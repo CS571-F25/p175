@@ -8,40 +8,37 @@ export default function AppNavbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  async function getUserLeagueId(userId) {
+    const res = await fetch(
+      `YOUR_BUCKET_URL/collections/bb-teams`,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    const data = await res.json();
+
+    const team = Object.values(data.results).find(
+      (t) => t.userId === userId
+    );
+
+    return team?.leagueId || null;
+  }
+
   function handleLogout() {
     logout();
     navigate('/');
   }
 
   return (
-    <Navbar
-      bg="dark"
-      variant="dark"
-      expand="sm"
-      fixed="top"
-      className="px-3"
-    >
+    <Navbar bg="dark" variant="dark" expand="sm" fixed="top" className="px-3">
       <Container fluid>
-        {/* Left: Home icon */}
-        <Navbar.Brand
-          as={Link}
-          to="/"
-          className="d-flex align-items-center me-3"
-        >
+
+        <Navbar.Brand as={Link} to="/" className="d-flex align-items-center me-3">
           <Home size={28} className="me-2" />
         </Navbar.Brand>
 
-        {/* Middle: Logo */}
         <Navbar.Brand className="me-auto">
-          <img
-            src={logo}
-            alt="Birdie Board logo"
-            height="40"
-            className="d-inline-block align-top"
-          />
+          <img src={logo} alt="Birdie Board logo" height="40" />
         </Navbar.Brand>
 
-        {/* Right side: Username or Login/Signup */}
         {user ? (
           <NavDropdown
             title={<span className="text-white">{user.username}</span>}
@@ -49,13 +46,30 @@ export default function AppNavbar() {
             align="end"
             menuVariant="dark"
           >
-            <NavDropdown.Item as={Link} to="/my-league">
+            <NavDropdown.Item
+              onClick={async () => {
+                const id = await getUserLeagueId(user.id);
+                if (id) navigate(`/league/${id}`);
+              }}
+            >
               Leaderboard
             </NavDropdown.Item>
-            <NavDropdown.Item as={Link} to="/my-team">
+
+            <NavDropdown.Item
+              onClick={async () => {
+                const id = await getUserLeagueId(user.id);
+                if (id) navigate(`/league/${id}/team`);
+              }}
+            >
               My Team
             </NavDropdown.Item>
-            <NavDropdown.Item as={Link} to="/my-draft">
+
+            <NavDropdown.Item
+              onClick={async () => {
+                const id = await getUserLeagueId(user.id);
+                if (id) navigate(`/league/${id}/draft`);
+              }}
+            >
               Draftboard
             </NavDropdown.Item>
 

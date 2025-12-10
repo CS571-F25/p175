@@ -256,3 +256,72 @@ export async function joinLeague({ leagueName, poolPassword, username }) {
 
   return { league: updatedLeague, team };
 }
+
+// Update all teams in a league after a draft completes.
+// - draft: the final draft object (with picks[] and leagueId)
+// - golfers: full golfer list from bb-golfers (to compute totalScore)
+export async function updateTeamsFromCompletedDraft(draft, golfers) {
+  if (!draft || !Array.isArray(draft.picks) || !draft.leagueId) {
+    return;
+  }
+
+  // Map golferId -> golfer (for totalScore lookup)
+  const golferById = new Map(
+    (golfers || []).map((g) => [g.golferId, g])
+  );
+
+  // Aggregate golfers + totalScore per teamId
+  const teamAgg = new Map();
+  for (const p of draft.picks) {
+    if (!p.teamId || !p.golferId) continue;
+
+    const agg =
+      teamAgg.get(p.teamId) || { golferIds: [], totalScore: 0 };
+
+    if (!agg.golferIds.includes(p.golferId)) {
+      agg.golferIds.push(p.golferId);
+
+      const g = golferById.get(p.golferId);
+      if (g && typeof g.totalScore === "number") {
+        agg.totalScore += g.totalScore;
+      }
+    }
+
+    teamAgg.set(p.teamId, agg);
+  }
+
+  if (!teamAgg.size) return;
+
+  // Load current teams so we have bucketId, etc.
+  const teams = await getTeamsForLeague(draft.leagueId);
+
+  // Write each updated team back to bb-teams
+  await Promise.all(
+    teams.map(async (team) => {
+      const tid = team.teamId || team.id;
+      const agg = teamAgg.get(tid);
+      if (!agg) return; // this team never picked (we just leave it)
+
+      const updatedTeam = {
+        ...team,
+        golferIds: agg.golferIds,
+        totalScore: agg.totalScore,
+      };
+
+      const { bucketId, ...body } = updatedTeam;
+
+      const res = await fetch(
+        `${BUCKET_TEAMS_URL}?id=${encodeURIComponent(bucketId)}`,
+        {
+          method: "PUT",
+          headers: COMMON_HEADERS,
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to update teams from completed draft.");
+      }
+    })
+  );
+}

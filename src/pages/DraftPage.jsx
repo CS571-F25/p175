@@ -13,6 +13,7 @@ import { getAllGolfers } from "../utils/golferStorage";
 import {
   getTeamsForLeague,
   getLeagueById,
+  updateTeamsFromCompletedDraft,
 } from "../utils/leagueAndTeamStorage";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -238,11 +239,24 @@ export default function DraftPage() {
       });
 
       setDraft(updated);
-    } catch (err) {
-      console.error(err);
-      setDraftError(err.message || "Failed to make pick.");
+      
+    // If this pick finished the draft, update teams in bb-teams
+    if (!updated.inProgress) {
+      try {
+        await updateTeamsFromCompletedDraft(updated, golfersRaw);
+      } catch (e) {
+        console.error(e);
+        // Draft is done; teams just might not have updated—surface a soft warning.
+        setDraftError(
+          "Draft completed, but updating team scores failed. Please refresh or try again."
+        );
+      }
     }
+  } catch (err) {
+    console.error(err);
+    setDraftError(err.message || "Failed to make pick.");
   }
+}
 
     // Show intro only if *no* draft exists yet
     const showIntro = !draft;
