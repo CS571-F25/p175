@@ -306,20 +306,20 @@ export async function updateTeamsFromCompletedDraft(draft, golfers) {
     (golfers || []).map((g) => [g.golferId, g])
   );
 
-  // Aggregate golfers + totalScore per teamId
+  // Aggregate golfers + scores per teamId (we'll sum the best five later)
   const teamAgg = new Map();
   for (const p of draft.picks) {
     if (!p.teamId || !p.golferId) continue;
 
     const agg =
-      teamAgg.get(p.teamId) || { golferIds: [], totalScore: 0 };
+      teamAgg.get(p.teamId) || { golferIds: [], golferScores: [] };
 
     if (!agg.golferIds.includes(p.golferId)) {
       agg.golferIds.push(p.golferId);
 
       const g = golferById.get(p.golferId);
       if (g && typeof g.totalScore === "number") {
-        agg.totalScore += g.totalScore;
+        agg.golferScores.push(g.totalScore);
       }
     }
 
@@ -338,10 +338,16 @@ export async function updateTeamsFromCompletedDraft(draft, golfers) {
       const agg = teamAgg.get(tid);
       if (!agg) return; // this team never picked (we just leave it)
 
+      const bestFiveTotal = agg.golferScores
+        .slice()
+        .sort((a, b) => a - b)
+        .slice(0, 5)
+        .reduce((sum, score) => sum + score, 0);
+
       const updatedTeam = {
         ...team,
         golferIds: agg.golferIds,
-        totalScore: agg.totalScore,
+        totalScore: bestFiveTotal,
       };
 
       const { bucketId, ...body } = updatedTeam;

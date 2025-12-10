@@ -95,16 +95,20 @@ export default function MyTeamPage() {
     });
   }, [myTeam, allGolfers]);
 
-  // ---- total team score (use stored value if present, else sum golfers) ----
+  // ---- total team score (best five golfers only) ----
   const totalTeamScore = useMemo(() => {
-    if (myTeam && typeof myTeam.totalScore === "number") {
-      return myTeam.totalScore;
+    if (!myGolfersSorted.length) {
+      return myTeam && typeof myTeam.totalScore === "number"
+        ? myTeam.totalScore
+        : 0;
     }
-    if (!myGolfersSorted.length) return 0;
-    return myGolfersSorted.reduce(
-      (sum, g) => sum + (g.totalScore ?? 0),
-      0
-    );
+
+    return myGolfersSorted.slice(0, 5).reduce((sum, g) => {
+      if (typeof g.totalScore === "number") {
+        return sum + g.totalScore;
+      }
+      return sum;
+    }, 0);
   }, [myTeam, myGolfersSorted]);
 
   const usernameLabel = user?.username
@@ -139,17 +143,21 @@ export default function MyTeamPage() {
 
       {/* Total team score just under league name */}
       {!loading && !errorMsg && myTeam && (
-        <p
-          style={{
-            textAlign: "center",
-            marginBottom: "8px",
-            fontWeight: 600,
-            color: "#111827",
-          }}
-        >
-          Total Team Score:{" "}
-          <span style={{ color: "#2563eb" }}>{totalTeamScore}</span>
-        </p>
+        <div style={{ textAlign: "center", marginBottom: "12px" }}>
+          <p
+            style={{
+              marginBottom: "4px",
+              fontWeight: 600,
+              color: "#111827",
+            }}
+          >
+            Total Team Score:{" "}
+            <span style={{ color: "#2563eb" }}>{totalTeamScore}</span>
+          </p>
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.95rem" }}>
+            Only your best five golfers count; any dropped score is highlighted in red.
+          </p>
+        </div>
       )}
 
       {/* Table of golfers on this team */}
@@ -173,24 +181,31 @@ export default function MyTeamPage() {
 
         {!loading &&
           !errorMsg &&
-          myGolfersSorted.map((g, idx) => (
-            <div key={g.golferId} className="bb-leaderboard-row">
-              <span className="bb-col-pos">{idx + 1}.</span>
-              <span className="bb-col-name bb-team-name">
-                {g.golferName}
-                <span
-                  style={{
-                    marginLeft: "0.5rem",
-                    fontSize: "0.8rem",
-                    color: "#6b7280",
-                  }}
-                >
-                  {g.country}
+          myGolfersSorted.map((g, idx) => {
+            const rowClassName = [
+              "bb-leaderboard-row",
+              idx < 5 ? "bb-row-top-five" : "bb-row-dropped",
+            ].join(" ");
+
+            return (
+              <div key={g.golferId} className={rowClassName}>
+                <span className="bb-col-pos">{idx + 1}.</span>
+                <span className="bb-col-name bb-team-name">
+                  {g.golferName}
+                  <span
+                    style={{
+                      marginLeft: "0.5rem",
+                      fontSize: "0.8rem",
+                      color: "#6b7280",
+                    }}
+                  >
+                    {g.country}
+                  </span>
                 </span>
-              </span>
-              <span className="bb-col-score">{g.totalScore}</span>
-            </div>
-          ))}
+                <span className="bb-col-score">{g.totalScore}</span>
+              </div>
+            );
+          })}
       </div>
     </div>
   );
