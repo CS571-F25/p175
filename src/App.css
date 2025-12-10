@@ -41,31 +41,32 @@
   color: #888;
 }
 
-/* Make league page use full viewport width and sit below navbar */
-.bb-league-page {
-  /* full height minus navbar; tweak if navbar is taller/shorter */
-  min-height: calc(100vh - 56px);
 
-  /* BREAK OUT of any centered container */
+/*///////////////////////////////////*/
+/*       FOR LEADERBOARD PAGE        */
+/*///////////////////////////////////*/
+
+.bb-league-page {
+  min-height: calc(100vh - 200px);
   width: 100vw;
   margin-left: calc(50% - 50vw);
-
   background-color: #f3f4f6;
-
-  /* push content below the fixed navbar */
   padding-top: 34px;
 }
 
 /* Full-width secondary nav just follows parent width */
 .bb-subnav {
-  width: 100%;
+  position: fixed;
+  top: 64px;                        /* sits right under the main navbar */
+  left: 0;
+  right: 0;
+  width: 100vw;                     /* full browser width */
+  margin-left: calc(50% - 50vw);    /* align with the rest of the app */
   background-color: #e5e7eb;
   display: flex;
   justify-content: center;
   gap: 5rem;
   padding: 1rem 0;
-  position: sticky;
-  top: 56px; /* match AppNavbar height */
   z-index: 800;
 }
 
@@ -87,7 +88,6 @@
 /* Centered league name pill */
 .bb-league-pill-wrapper {
   margin-top: 24px;
-  margin-bottom: 16px;
   display: flex;
   justify-content: center;
 }
@@ -151,5 +151,252 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #6b7280;
+}
+
+/*///////////////////////////////////*/
+/*          FOR DRAFT PAGE           */
+/*///////////////////////////////////*/
+/* Area BELOW LeagueNavbar: rankings (left) + board (right) */
+.bb-draft-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;  
+}
+
+.bb-draft-page {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  min-height: calc(100vh - 70px); /* main navbar height */
+  background-color: #f3f4f6;
+  display: flex;
+  padding-top: 140px;
+  flex-direction: column; /* navbar on top, content below */
+}
+
+/* Left panel */
+.bb-draft-rankings {
+  width: 360px;              /* tweak as you like */
+  min-width: 280px;
+  max-width: 360px;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  padding-left: 20px;
+
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 140px);
+
+
+}
+.bb-draft-rankings-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  margin: 0;
+}
+
+.bb-draft-rankings-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Table */
+.bb-draft-rankings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.bb-draft-rankings-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #f9fafb;
+  z-index: 1;
+}
+
+.bb-draft-rankings-table th,
+.bb-draft-rankings-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.bb-draft-col-rank {
+  width: 3rem;
+  text-align: right;
+}
+
+.bb-draft-col-player {
+  width: 100%;
+}
+
+.bb-draft-col-country {
+  width: 4rem;
+  text-align: center;
+}
+
+/* Row hover */
+.bb-draft-row-hover {
+  background-color: #eef2ff;
+}
+
+/* Player cell with Draft button */
+.bb-draft-player-name {
+  font-weight: 500;
+}
+
+/* tiny pill button that appears on hover if canDraft */
+.bb-draft-btn {
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  border: none;
+  background-color: #2563eb;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.bb-draft-btn:hover {
+  background-color: #1d4ed8;
+}
+
+/* Right side: draft board area shell */
+.bb-draft-board-shell {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;  
+}
+
+.bb-draft-board-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.bb-draft-board-placeholder {
+  flex: 1;
+  border-radius: 0.75rem;
+  border: 1px dashed #cbd5f5;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+/*///////////////////////////////////////*/
+/*          FOR PREDRAFT BOARD           */
+/*///////////////////////////////////////*/
+.bb-draft-start-btn {
+  background-color: #2563eb;    /* Blue-600 */
+  color: white;
+  padding: 0.75rem 1.75rem;
+  font-size: 1.1rem;
+  font-weight: 00;
+  border: none;
+  border-radius: 999px;         /* pill shape */
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.bb-draft-start-btn:hover {
+  background-color: #1e40af;    /* Blue-800 */
+  transform: translateY(-2px);
+}
+
+.bb-draft-start-btn:active {
+  background-color: #1d4ed8;    /* Blue-700 */
+  transform: translateY(0px);
+}
+
+.bb-draft-start-btn:disabled {
+  background-color: #93c5fd;    /* Blue-300 */
+  cursor: not-allowed;
+}
+
+
+/*///////////////////////////////////////*/
+/*          LIVE DRAFT GRID              */
+/*///////////////////////////////////////*/
+.bb-live-draft-board {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+/* Grid: one column per team */
+.bb-draft-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(140px, 1fr);
+  gap: 1rem;
+}
+
+/* Each team column */
+.bb-draft-grid-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Team header (pill-like) */
+.bb-draft-team-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background-color: #111827;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.bb-draft-team-initial {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background-color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.bb-draft-team-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Column of six pick cells */
+.bb-draft-pick-column-cells {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Individual pick box */
+.bb-draft-pick-cell {
+  height: 56px;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
   color: #6b7280;
 }

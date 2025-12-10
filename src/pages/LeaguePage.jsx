@@ -1,16 +1,12 @@
 // src/pages/LeaguePage.jsx
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Spinner } from "react-bootstrap";
-import {
-  getLeagueById,
-  getTeamsForLeague,
-} from "../utils/leagueAndTeamStorage";
+import { getLeagueById, getTeamsForLeague } from "../utils/leagueAndTeamStorage";
+import LeagueNavbar from "../components/LeagueNavbar";
 
 export default function LeaguePage() {
   const { leagueId } = useParams();
-  const navigate = useNavigate();
-
   const [leagueName, setLeagueName] = useState("");
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,39 +38,10 @@ export default function LeaguePage() {
     }
   }, [leagueId]);
 
-  function goTo(tab) {
-    if (tab === "leaderboard") {
-      navigate(`/league/${leagueId}`);
-    } else if (tab === "my-team") {
-      navigate(`/league/${leagueId}/my-team`);
-    } else if (tab === "draft") {
-      navigate(`/league/${leagueId}/draft`);
-    }
-  }
-
   return (
     <div className="bb-league-page">
       {/* Secondary nav — full width */}
-      <div className="bb-subnav">
-        <button
-          className="bb-subnav-link bb-subnav-link-active"
-          onClick={() => goTo("leaderboard")}
-        >
-          Leaderboard
-        </button>
-        <button
-          className="bb-subnav-link"
-          onClick={() => goTo("my-team")}
-        >
-          My Team
-        </button>
-        <button
-          className="bb-subnav-link"
-          onClick={() => goTo("draft")}
-        >
-          Draft
-        </button>
-      </div>
+      <LeagueNavbar active="leaderboard" />
 
       {/* League name pill */}
       <div className="bb-league-pill-wrapper">

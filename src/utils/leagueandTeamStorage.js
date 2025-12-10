@@ -188,6 +188,7 @@ export async function createLeague({ leagueName, leaguePassword, ownerUsername }
   // 5. Create a team for the owner in this league
   const team = await createTeamForUserInLeague({
     userId,
+    username: owner.username,
     leagueId: newLeague.leagueId,
   });
 
@@ -197,10 +198,11 @@ export async function createLeague({ leagueName, leaguePassword, ownerUsername }
 
 
 // Helper to create a team for a user in a league
-async function createTeamForUserInLeague({ userId, leagueId }) {
+async function createTeamForUserInLeague({ userId, username, leagueId }) {
   const newTeam = {
     teamId: crypto.randomUUID(),
     userId,
+    username,
     leagueId,
     golferIds: [],
     totalScore: 0,
@@ -245,6 +247,7 @@ export async function joinLeague({ leagueName, poolPassword, username }) {
   // 4. Create a team for this user in this league
   const team = await createTeamForUserInLeague({
     userId,
+    username: user.username,
     leagueId: league.leagueId,
   });
 

@@ -9,7 +9,7 @@ import AboutPage from "./pages/AboutPage";
 import JoinLeaguePage from './pages/JoinLeaguePage';
 import CreateLeaguePage from './pages/CreateLeaguePage';
 import LeaguePage from './pages/LeaguePage';
-// import DraftPage from './pages/DraftPage';
+import DraftPage from './pages/DraftPage';
 // import MyTeamPage from './pages/MyTeamPage';
 
 export default function AppRoutes() {
@@ -22,6 +22,7 @@ export default function AppRoutes() {
       <Route path="/join-league" element={<JoinLeaguePage />} />
       <Route path="/create-league" element={<CreateLeaguePage />} />
       <Route path="/league/:leagueId" element={<LeaguePage />} />
+      <Route path="/league/:leagueId/draft" element={<DraftPage />} />
     </Routes>
   );
 }

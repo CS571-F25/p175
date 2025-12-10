@@ -2,7 +2,7 @@
 
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
-import AppNavbar from './layout/AppNavbar';
+import AppNavbar from './components/AppNavbar';
 import AppRoutes from './router';
 import { AuthProvider } from './context/AuthContext';
 
