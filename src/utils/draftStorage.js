@@ -1,4 +1,5 @@
-// Drafts bucket
+// src/utils/draftStorage.js
+
 import { getTeamsForLeague } from "./leagueAndTeamStorage";
 
 const BUCKET_DRAFTS_URL =
@@ -10,10 +11,9 @@ const COMMON_HEADERS = {
     "bid_43173fda9267d4ebd9d6283b9e05aa9526dade986fa45ba6c57332cdbdb92315",
 };
 
-// --- helpers to read drafts ---
+// ---------- helpers to read bucket shape ----------
 
-// Helper: normalize Bucket -> array of drafts with bucketId
-async function fetchAllDrafts() {
+async function getAllDrafts() {
   const res = await fetch(BUCKET_DRAFTS_URL, {
     method: "GET",
     headers: COMMON_HEADERS,
@@ -32,65 +32,51 @@ async function fetchAllDrafts() {
   }));
 }
 
-/**
- * Get the most recent draft for a league (if any).
- * Right now we:
- *   - filter by leagueId
- *   - if multiple, choose the one with the latest createdAt
- */
 export async function getDraftForLeague(leagueId) {
-  const res = await fetch(`${BUCKET_DRAFTS_URL}?leagueId=${encodeURIComponent(leagueId)}`, {
-    method: "GET",
-    headers: COMMON_HEADERS,
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch draft.");
-  }
-
-  const data = await res.json();
-  const results = data.results || {};
-
-  // assuming 0 or 1 draft per league; grab the first
-  const first = Object.entries(results)[0];
-  if (!first) return null;
-
-  const [bucketId, draft] = first;
-  return { ...draft, bucketId };
+  const drafts = await getAllDrafts();
+  // assume at most one draft per league
+  return drafts.find((d) => d.leagueId === leagueId) || null;
 }
 
-// For randomizing draft order
-function shuffleArray(arr) {
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
+// ---------- create draft for league ----------
 
-/**
- * Create a new draft for the league.
- * teamOrder should be an array of teamIds in pick order (snake order setup).
- */
 export async function createDraftForLeague(leagueId) {
-  // 1. Load teams for this league
+  // We need teams to build teamOrder and first picker
   const teams = await getTeamsForLeague(leagueId);
-  const teamIds = teams.map((t) => t.teamId || t.id);
+  if (!teams || teams.length === 0) {
+    throw new Error("Cannot start a draft with no teams in the league.");
+  }
 
-  // 2. Randomize order ONCE
-  const teamOrder = shuffleArray(teamIds);
+  const numberOfTeams = teams.length;
+
+  // randomize team order (by teamId)
+  const teamOrder = [...teams]
+    .sort(() => Math.random() - 0.5)
+    .map((t) => t.teamId);
+
+  const picksPerTeam = 6;
+  const currentPickNumber = 1;
+
+  // who is on the clock for pick 1?
+  const { teamIndex } = computeSnakeSlot(
+    currentPickNumber,
+    numberOfTeams
+  );
+  const firstTeamId = teamOrder[teamIndex];
+  const firstTeam = teams.find((t) => t.teamId === firstTeamId);
+  const currentUserIdPicking = firstTeam?.userId ?? null;
 
   const now = new Date().toISOString();
 
-  const draftBody = {
+  const newDraft = {
     draftId: crypto.randomUUID(),
     leagueId,
-    numberOfTeams: teamOrder.length,
+    numberOfTeams,
+    teamOrder,
+    picksPerTeam,
     inProgress: true,
-    teamOrder, // randomized
-    currentPickNumber: 1,
-    currentUserIdPicking: null, // you can fill this in later using team->user mapping
+    currentPickNumber,
+    currentUserIdPicking,
     picks: [],
     createdAt: now,
     updatedAt: now,
@@ -99,7 +85,7 @@ export async function createDraftForLeague(leagueId) {
   const res = await fetch(BUCKET_DRAFTS_URL, {
     method: "POST",
     headers: COMMON_HEADERS,
-    body: JSON.stringify(draftBody),
+    body: JSON.stringify(newDraft),
   });
 
   if (!res.ok) {
@@ -107,21 +93,37 @@ export async function createDraftForLeague(leagueId) {
   }
 
   const data = await res.json();
-  return { ...draftBody, bucketId: data.id ?? undefined };
+  return { ...newDraft, bucketId: data.id ?? undefined };
 }
 
-/**
- * (For later) generic updater – same ?id pattern as leagues.
- */
-export async function updateDraftInBucket(draft) {
-  if (!draft.bucketId) {
-    throw new Error("Draft is missing bucketId; cannot PUT.");
+// ---------- snake math helpers ----------
+
+// Given overallPickNumber (1-based) and numberOfTeams
+// figure out who should pick (teamIndex) and round/pickInRound.
+export function computeSnakeSlot(overallPick, numberOfTeams) {
+  const pickIndex = overallPick - 1; // 0-based
+  const round = Math.floor(pickIndex / numberOfTeams) + 1;
+  const pickInRound = (pickIndex % numberOfTeams) + 1;
+
+  let teamIndex;
+  if (round % 2 === 1) {
+    // odd round: 1..N
+    teamIndex = pickInRound - 1;
+  } else {
+    // even round: N..1
+    teamIndex = numberOfTeams - pickInRound;
   }
 
-  const { bucketId, ...body } = {
-    ...draft,
-    updatedAt: new Date().toISOString(),
-  };
+  return { round, pickInRound, teamIndex };
+}
+
+// ---------- update draft on pick ----------
+
+async function putDraftToBucket(draft) {
+  const { bucketId, ...body } = draft;
+  if (!bucketId) {
+    throw new Error("Draft missing bucketId; cannot update.");
+  }
 
   const res = await fetch(
     `${BUCKET_DRAFTS_URL}?id=${encodeURIComponent(bucketId)}`,
@@ -136,5 +138,75 @@ export async function updateDraftInBucket(draft) {
     throw new Error("Failed to update draft in Bucket.");
   }
 
-  return { ...body, bucketId };
+  const data = await res.json();
+  return { ...draft, ...data };
+}
+
+/**
+ * Make a pick for the given golfer in this draft.
+ * - Only updates in-memory draft; caller must have already
+ *   validated that user is allowed to pick.
+ * - Then we PUT the updated draft back to Bucket.
+ */
+export async function makePickOnDraft({ draft, golfer, teams }) {
+  if (!draft.inProgress) {
+    throw new Error("Draft is not in progress.");
+  }
+
+  const numberOfTeams = draft.numberOfTeams;
+  const picksPerTeam = draft.picksPerTeam ?? 6;
+  const totalPicks = numberOfTeams * picksPerTeam;
+
+  const currentPick = draft.currentPickNumber;
+
+  // If already at/after last pick, stop.
+  if (currentPick > totalPicks) {
+    throw new Error("Draft is already complete.");
+  }
+
+  const { round, pickInRound, teamIndex } = computeSnakeSlot(
+    currentPick,
+    numberOfTeams
+  );
+  const teamId = draft.teamOrder[teamIndex];
+
+  const newPick = {
+    overallPick: currentPick,
+    round,
+    pickInRound,
+    teamId,
+    golferId: golfer.golferId,
+    golferName: golfer.golferName,
+    golferCountry: golfer.country,
+    timestamp: new Date().toISOString(),
+  };
+
+  const newPicks = [...(draft.picks || []), newPick];
+
+  // Move to next pick
+  const nextPickNumber = currentPick + 1;
+
+  let inProgress = true;
+  let currentUserIdPicking = null;
+
+  if (nextPickNumber > totalPicks) {
+    // draft done
+    inProgress = false;
+  } else {
+    const nextSlot = computeSnakeSlot(nextPickNumber, numberOfTeams);
+    const nextTeamId = draft.teamOrder[nextSlot.teamIndex];
+    const nextTeam = teams.find((t) => t.teamId === nextTeamId);
+    currentUserIdPicking = nextTeam?.userId ?? null;
+  }
+
+  const updatedDraft = {
+    ...draft,
+    picks: newPicks,
+    currentPickNumber: nextPickNumber,
+    currentUserIdPicking,
+    inProgress,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return putDraftToBucket(updatedDraft);
 }

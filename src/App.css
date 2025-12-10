@@ -412,3 +412,44 @@
 .bb-now-drafting-name {
   color: #2563eb; /* blue-600 */
 }
+
+/* Individual pick box */
+.bb-draft-pick-cell {
+  height: 88px;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* Drafted cell variant */
+.bb-draft-pick-cell--taken {
+  background-color: #2563eb;   /* blue */
+  border-color: #1d4ed8;
+  color: #eff6ff;              /* light text */
+}
+
+/* Inner text pieces */
+.bb-pick-label {
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.bb-pick-golfer {
+  margin-top: 0.1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.bb-pick-country {
+  margin-top: 0.1rem;
+  font-size: 0.9rem;
+  opacity: 0.95;
+}

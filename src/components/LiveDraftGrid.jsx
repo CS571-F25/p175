@@ -1,16 +1,6 @@
-// Grid that displays the active draft
-import React from "react";
+// Grid that displays the active draft 
+import React, { useMemo } from "react";
 
-/**
- * Props:
- *  - draft: {
- *      numberOfTeams: number,
- *      teamOrder: string[] // array of teamIds in draft order
- *    }
- *  - teams: [
- *      { teamId, id, username?, teamName? , ... }
- *    ]
- */
 const ROUNDS = 6; // 6 players per team
 
 export default function LiveDraftGrid({ draft, teams }) {
@@ -21,36 +11,42 @@ export default function LiveDraftGrid({ draft, teams }) {
     return <p>No teams found for this draft.</p>;
   }
 
-  // teamOrder is an array of teamIds in draft order
-  const orderedTeamIds = Array.isArray(draft.teamOrder) && draft.teamOrder.length
-    ? draft.teamOrder
-    : teams.map((t) => t.teamId || t.id);
+  const orderedTeamIds =
+    Array.isArray(draft.teamOrder) && draft.teamOrder.length
+      ? draft.teamOrder
+      : teams.map((t) => t.teamId || t.id);
 
-  // Map team order -> display object
   const orderedTeams = orderedTeamIds.map((tid, idx) => {
     const t = teams.find(
       (team) => team.teamId === tid || team.id === tid
     );
     const displayName =
       t?.username || t?.teamName || `Team ${idx + 1}`;
+
     return {
       teamId: tid,
       displayName,
     };
   });
 
-  // Small helper: build the 6 picks for a given column (team)
+  const picksByOverall = useMemo(() => {
+    const map = new Map();
+    (draft.picks || []).forEach((p) => {
+      if (typeof p.overallPick === "number") {
+        map.set(p.overallPick, p);
+      }
+    });
+    return map;
+  }, [draft]);
+
   function buildColumnPicks(colIndex) {
     const picks = [];
 
     for (let round = 1; round <= ROUNDS; round++) {
-      // for snake: figure out overall index and pick-in-round label
       let pickInRound;
       if (round % 2 === 1) {
-        // odd round: 1 -> numTeams left to right
         pickInRound = colIndex + 1;
       } else {
-        // even round: numTeams -> 1 right to left
         pickInRound = numTeams - colIndex;
       }
 
@@ -76,7 +72,10 @@ export default function LiveDraftGrid({ draft, teams }) {
         const colPicks = buildColumnPicks(colIdx);
 
         return (
-          <div key={team.teamId || colIdx} className="bb-draft-grid-column">
+          <div
+            key={team.teamId || colIdx}
+            className="bb-draft-grid-column"
+          >
             {/* Team header pill */}
             <div className="bb-draft-team-header">
               <span className="bb-draft-team-initial">
@@ -89,14 +88,36 @@ export default function LiveDraftGrid({ draft, teams }) {
 
             {/* 6 pick slots */}
             <div className="bb-draft-pick-column-cells">
-              {colPicks.map((pick) => (
-                <div
-                  key={`${team.teamId}-${pick.overallPick}`}
-                  className="bb-draft-pick-cell"
-                >
-                  {pick.label}
-                </div>
-              ))}
+              {colPicks.map((pick) => {
+                const pickRecord = picksByOverall.get(pick.overallPick);
+                const cellClass = pickRecord
+                  ? "bb-draft-pick-cell bb-draft-pick-cell--taken"
+                  : "bb-draft-pick-cell";
+
+                return (
+                  <div
+                    key={`${team.teamId}-${pick.overallPick}`}
+                    className={cellClass}
+                  >
+                    {pickRecord ? (
+                      <>
+                        <div className="bb-pick-label">{pick.label}</div>
+                        <div className="bb-pick-golfer">
+                          {pickRecord.golferName ??
+                            `Golfer #${pickRecord.golferId}`}
+                        </div>
+                        {pickRecord.golferCountry && (
+                          <div className="bb-pick-country">
+                            {pickRecord.golferCountry}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="bb-pick-label">{pick.label}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

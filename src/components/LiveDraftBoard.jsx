@@ -1,6 +1,5 @@
-// Display LiveDraftBoard
-
-import React, { useMemo } from "react";
+// src/components/LiveDraftBoard.jsx
+import React from "react";
 import LiveDraftGrid from "./LiveDraftGrid";
 
 export default function LiveDraftBoard({ draft, teams }) {
@@ -12,25 +11,21 @@ export default function LiveDraftBoard({ draft, teams }) {
     );
   }
 
-  // ---- Find the team currently drafting ----
-  const currentTeam = useMemo(() => {
-    if (!draft.currentUserIdPicking) return null;
-    return teams.find(
+  // figure out who is on the clock
+  let currentName = "Draft complete";
+  if (draft.inProgress && draft.currentUserIdPicking) {
+    const currentTeam = teams.find(
       (t) => t.userId === draft.currentUserIdPicking
     );
-  }, [draft, teams]);
-
-  const currentTeamName =
-    currentTeam?.username ||
-    currentTeam?.teamName ||
-    "Unknown Team";
+    currentName = currentTeam?.username || currentTeam?.teamName || "Unknown team";
+  }
 
   return (
     <div className="bb-live-draft-board">
-
-      {/* ------- NOW DRAFTING TEXT -------- */}
-      <h3 className="bb-now-drafting-text">
-        Now Drafting: <span className="bb-now-drafting-name">{currentTeamName}</span>
+      <h3 className="bb-live-draft-now">
+        {draft.inProgress
+          ? `Now Drafting: ${currentName}`
+          : "Draft Complete"}
       </h3>
 
       <LiveDraftGrid draft={draft} teams={teams} />
