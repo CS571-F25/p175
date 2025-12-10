@@ -112,6 +112,16 @@ body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+.bb-row-top-five {
+  background-color: #ecfdf3;
+  border: 1px solid #bbf7d0;
+}
+
+.bb-row-dropped {
+  background-color: #fef2f2;
+  border: 1px solid #fecdd3;
+}
+
 .bb-col-pos {
   text-align: left;
 }
