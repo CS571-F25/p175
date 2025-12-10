@@ -1,4 +1,4 @@
-// Users Bucket
+// Functions used to access/edit bb-users data
 
 import { hashPassword } from "./hashPassword";
 

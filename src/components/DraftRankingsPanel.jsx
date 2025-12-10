@@ -1,4 +1,4 @@
-// Panel used to display rankings in DraftPage
+// Component to display golfers in order from their preDraftRank on Draft Page
 
 import { useState, useMemo } from "react";
 

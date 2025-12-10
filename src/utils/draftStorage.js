@@ -1,4 +1,4 @@
-// src/utils/draftStorage.js
+// Functions used to access/edit bb-drafts data
 
 import { getTeamsForLeague } from "./leagueAndTeamStorage";
 

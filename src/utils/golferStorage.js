@@ -1,4 +1,4 @@
-// Bucket for golfers
+// Functions used to access/edit bb-golfers data
 
 const BUCKET_GOLFERS_URL =
   "https://cs571api.cs.wisc.edu/rest/f25/bucket/bb-golfers";

@@ -1,6 +1,5 @@
 // Hash and add salt to password
 
-
 const SALT = "birdieboard_v1_salt";
 
 // Hash a password using SHA-256 + a static salt.

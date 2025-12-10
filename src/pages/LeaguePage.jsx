@@ -1,4 +1,5 @@
-// src/pages/LeaguePage.jsx
+// Page that shows all teams in a league in a scoreboard format based on totalScore
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Spinner } from "react-bootstrap";

@@ -1,4 +1,5 @@
-// src/components/LiveDraftBoard.jsx
+// Component that has draftboard page for live draft
+
 import React from "react";
 import LiveDraftGrid from "./LiveDraftGrid";
 

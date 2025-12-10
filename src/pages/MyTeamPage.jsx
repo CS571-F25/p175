@@ -1,4 +1,5 @@
-// src/pages/MyTeamPage.jsx
+// Populated after draft with your teams players and their score
+
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Spinner } from "react-bootstrap";

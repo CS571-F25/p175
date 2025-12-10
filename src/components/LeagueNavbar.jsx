@@ -1,3 +1,6 @@
+// Subnav present on league pages
+// Navigate between leaderboard, my team, and draftboard
+
 import { useNavigate, useParams } from "react-router-dom";
 
 export default function LeagueNavbar({ active = "leaderboard" }) {

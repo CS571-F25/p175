@@ -1,4 +1,6 @@
-// Grid that displays the active draft 
+// Component that is used during draft and once draft finishes
+// Creates visual snake draft grid to represent picks for each team
+
 import React, { useMemo } from "react";
 
 const ROUNDS = 6; // 6 players per team
@@ -29,6 +31,7 @@ export default function LiveDraftGrid({ draft, teams }) {
     };
   });
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const picksByOverall = useMemo(() => {
     const map = new Map();
     (draft.picks || []).forEach((p) => {

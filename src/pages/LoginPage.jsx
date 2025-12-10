@@ -1,6 +1,5 @@
 // Page with login form for existing users
 
-// src/pages/LoginPage.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Container, Form, Button } from "react-bootstrap";

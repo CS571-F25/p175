@@ -1,4 +1,4 @@
-// Buckets for leagues and teams
+// Functions used to access/edit bb-leagues and bb-teams data
 
 import { getUserByUsername, getAllUsers } from "./userStorage";
 import { hashPassword } from "./hashPassword";
@@ -65,7 +65,7 @@ async function addUserToLeagueInBucket(league, userId) {
     userIds: [...currentUserIds, userId],
   };
 
-  const { bucketId, ...body } = updatedLeague; // strip bucketId before sending
+  const { bucketId: _bucketId, ...body } = updatedLeague; // strip bucketId before sending
 
   const res = await fetch(
     `${BUCKET_LEAGUES_URL}?id=${encodeURIComponent(league.bucketId)}`,

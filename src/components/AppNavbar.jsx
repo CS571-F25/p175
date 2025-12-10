@@ -1,3 +1,6 @@
+// Main Navbar present on top of every page
+// Includes Home, Logo, and tool bar
+
 import { Navbar, Container, Button, NavDropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -8,20 +11,6 @@ import { getTeamsForUser } from '../utils/leagueAndTeamStorage';
 export default function AppNavbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
-  async function getUserLeagueId(userId) {
-    const res = await fetch(
-      `YOUR_BUCKET_URL/collections/bb-teams`,
-      { headers: { "Content-Type": "application/json" } }
-    );
-    const data = await res.json();
-
-    const team = Object.values(data.results).find(
-      (t) => t.userId === userId
-    );
-
-    return team?.leagueId || null;
-  }
 
   async function goToSection(section) {
     if (!user) {

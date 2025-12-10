@@ -1,5 +1,4 @@
-// src/pages/DraftPage.jsx
-// Page that displays draft
+// Page that displays draftboard and golfers by ranking
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -239,7 +238,7 @@ export default function DraftPage() {
       });
 
       setDraft(updated);
-      
+
     // If this pick finished the draft, update teams in bb-teams
     if (!updated.inProgress) {
       try {

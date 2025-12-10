@@ -1,4 +1,4 @@
-// Page for Predraft on Draftboard
+// Component for PreDraftBoard -> Once owner starts draft, this updates to LiveDraftBoard
 
 export default function DraftBoardIntro({ teamCount, onStartDraft, errorMsg }) {
   const plural = teamCount === 1 ? "team" : "teams";
