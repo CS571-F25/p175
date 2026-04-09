@@ -3,7 +3,7 @@
 
 import React, { useMemo } from "react";
 
-const ROUNDS = 6; // 6 players per team
+const ROUNDS = 7; // 7 players per team
 
 export default function LiveDraftGrid({ draft, teams }) {
   if (!draft) return null;
