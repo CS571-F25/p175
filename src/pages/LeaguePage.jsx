@@ -57,6 +57,7 @@ export default function LeaguePage() {
           return {
             ...team,
             totalScore: liveTotalScore,
+            golfers: teamGolfers,
           };
         });
 
@@ -127,9 +128,17 @@ export default function LeaguePage() {
                   className={`bb-leaderboard-row ${rankClass}`.trim()}
                 >
                   <span className="bb-col-pos">{idx + 1}.</span>
-                  <span className="bb-col-name bb-team-name">
-                    {team.displayName}
-                  </span>
+                    <span className="bb-col-name">
+                      <div className="bb-team-name">{team.displayName}</div>
+                      <div className="bb-team-golfers">
+                        {(team.golfers || []).map((g) => (
+                          <div key={g.golferId} className="bb-team-golfer-line">
+                            <span className="bb-team-golfer-name">{g.golferName}</span>
+                            <span className="bb-team-golfer-score">{g.totalScore}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </span>
                   <span className="bb-col-score">{team.totalScore}</span>
                 </div>
               );

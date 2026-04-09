@@ -106,10 +106,11 @@ body {
 
 .bb-leaderboard-row {
   background-color: #ffffff;
-  margin-top: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 999px;
+  margin-top: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1.25rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  align-items: start;
 }
 
 .bb-rank-first {
@@ -141,6 +142,33 @@ body {
 .bb-row-dropped {
   background-color: #fef2f2;
   border: 1px solid #fecdd3;
+}
+
+/* Listing other teams golfers */
+.bb-team-golfers {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.bb-team-golfer-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.bb-team-golfer-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-team-golfer-score {
+  font-weight: 600;
+  color: #374151;
 }
 
 .bb-col-pos {
