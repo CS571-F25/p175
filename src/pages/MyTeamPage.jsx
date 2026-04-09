@@ -10,7 +10,7 @@ import {
   getLeagueById,
   getTeamsForLeague,
 } from "../utils/leagueAndTeamStorage";
-import { getAllGolfers } from "../utils/golferStorage";
+import { syncLiveScoresToBucket } from "../utils/golferStorage";
 
 export default function MyTeamPage() {
   const { leagueId } = useParams();
@@ -56,7 +56,7 @@ export default function MyTeamPage() {
         }
 
         // 3. All golfers so we can look up names/scores
-        const golfers = await getAllGolfers();
+        const golfers = await syncLiveScoresToBucket();
         if (!cancelled) {
           setAllGolfers(golfers);
         }

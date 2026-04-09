@@ -1,41 +1,69 @@
-// Functions used to access/edit bb-golfers data
+import { getAllGolfers, BUCKET_GOLFERS_URL, COMMON_HEADERS } from "./golfers";
 
-const BUCKET_GOLFERS_URL =
-  "https://cs571api.cs.wisc.edu/rest/f25/bucket/bb-golfers";
+// ─── Sync live ESPN scores into your bb-golfers bucket ───────────────────────
 
-const COMMON_HEADERS = {
-  "Content-Type": "application/json",
-  "X-CS571-ID":
-    "bid_43173fda9267d4ebd9d6283b9e05aa9526dade986fa45ba6c57332cdbdb92315",
-};
+const ESPN_SCOREBOARD_URL =
+  "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811941";
 
 /**
- * Fetch all golfers from the bb-golfers bucket.
- * We flatten that into a simple array of golfer objects.
+ * Parse the raw ESPN response into a simple name→score map.
+ * "E" is converted to 0. "-3" → -3, "+2" → 2.
  */
-export async function getAllGolfers() {
-  const res = await fetch(BUCKET_GOLFERS_URL, {
-    method: "GET",
-    headers: COMMON_HEADERS,
+function buildScoreMap(espnData) {
+  const competitors =
+    espnData?.events?.[0]?.competitions?.[0]?.competitors ?? [];
+
+  const map = new Map();
+
+  competitors.forEach((c) => {
+    const shortName = c.athlete?.shortName; // e.g. "T. Fleetwood"
+    const raw = c.score ?? "E";             // e.g. "-3", "E", "+2"
+    const score = raw === "E" ? 0 : parseInt(raw, 10);
+
+    if (shortName) map.set(shortName, score);
   });
 
-  if (!res.ok) {
-    throw new Error("Failed to load golfers from Bucket.");
+  return map;
+}
+
+/**
+ * Fetch live scores from ESPN and patch your bucket golfers.
+ * Writes updated totalScore back to the bucket, then returns
+ * the updated golfer array so your UI stays on the getAllGolfers path.
+ */
+export async function syncLiveScoresToBucket() {
+  try {
+    const espnRes = await fetch(ESPN_SCOREBOARD_URL);
+    if (!espnRes.ok) throw new Error("ESPN fetch failed");
+    const espnData = await espnRes.json();
+    const scoreMap = buildScoreMap(espnData);
+
+    const golfers = await getAllGolfers();
+    const updated = golfers.map((g) => {
+      const liveScore = scoreMap.get(g.golferName);
+      return liveScore !== undefined ? { ...g, totalScore: liveScore } : g;
+    });
+
+    const byBucket = updated.reduce((acc, g) => {
+      if (!acc[g.bucketId]) acc[g.bucketId] = [];
+      acc[g.bucketId].push(g);
+      return acc;
+    }, {});
+
+    await Promise.all(
+      Object.entries(byBucket).map(([bucketId, golferGroup]) =>
+        fetch(`${BUCKET_GOLFERS_URL}/${bucketId}`, {
+          method: "PUT",
+          headers: COMMON_HEADERS,
+          body: JSON.stringify(golferGroup),
+        })
+      )
+    );
+
+    return updated;
+  } catch (err) {
+    // ESPN is down or changed — fall back to bucket scores silently
+    console.warn("Live score sync failed, falling back to bucket data:", err.message);
+    return getAllGolfers();
   }
-
-  const data = await res.json();
-  const results = data.results || {};
-
-  const golfers = [];
-
-  Object.entries(results).forEach(([bucketId, value]) => {
-    if (Array.isArray(value)) {
-      // You likely POSTed one big array of 50 golfers under a single id
-      value.forEach((g) => golfers.push({ ...g, bucketId }));
-    } else if (value && typeof value === "object") {
-      golfers.push({ ...value, bucketId });
-    }
-  });
-
-  return golfers;
 }
