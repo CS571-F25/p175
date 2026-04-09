@@ -59,6 +59,8 @@ export default function MyTeamPage() {
         const golfers = await syncLiveScoresToBucket();
         if (!cancelled) {
           setAllGolfers(golfers);
+          console.log("allGolfers sample", golfers.slice(0, 5));
+          console.log("myTeam golferIds", myTeam?.golferIds);
         }
       } catch (err) {
         console.error(err);
@@ -82,9 +84,12 @@ export default function MyTeamPage() {
   const myGolfersSorted = useMemo(() => {
     if (!myTeam || !Array.isArray(myTeam.golferIds)) return [];
 
-    const idSet = new Set(myTeam.golferIds);
+    // const idSet = new Set(myTeam.golferIds);
+    // const mine = allGolfers.filter((g) => idSet.has(g.golferId));
+    const idSet = new Set((myTeam.golferIds || []).map(String));
+    const mine = allGolfers.filter((g) => idSet.has(String(g.golferId)));
 
-    const mine = allGolfers.filter((g) => idSet.has(g.golferId));
+    console.log("filtered mine", mine);
 
     // Lower totalScore is better; tie-break by preTournamentRank
     return mine.sort((a, b) => {
