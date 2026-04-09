@@ -8,7 +8,7 @@ import LeagueNavbar from "../components/LeagueNavbar";
 import DraftBoardIntro from "../components/DraftBoardIntro";
 import LiveDraftBoard from "../components/LiveDraftBoard";
 
-import { syncLiveScoresToBucket } from "../utils/golferStorage";
+import { getAllGolfers } from "../utils/golfers";
 import {
   getTeamsForLeague,
   getLeagueById,
@@ -47,32 +47,30 @@ export default function DraftPage() {
     try {
       setLoadingGolfers(true);
       setErrorMsg("");
-      const golfers = await syncLiveScoresToBucket();
-      if (!cancelled) setGolfersRaw(golfers);
-    } catch (err) {
-      if (!cancelled) {
-        console.error(err);
-        setErrorMsg(err.message || "Failed to load golfer rankings.");
+
+      const golfers = await getAllGolfers();
+        if (!cancelled) {
+          setGolfersRaw(golfers);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          setErrorMsg(err.message || "Failed to load golfer rankings.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingGolfers(false);
+        }
+
+
       }
-    } finally {
-      if (!cancelled) setLoadingGolfers(false);
-    }
   }
 
-  loadGolfers();
-
-  // Poll every 90s — only sets loading spinner on first load, not refreshes
-  const interval = setInterval(async () => {
-    if (cancelled) return;
-    const golfers = await syncLiveScoresToBucket();
-    if (!cancelled) setGolfersRaw(golfers);
-  }, 90_000);
-
-  return () => {
-    cancelled = true;
-    clearInterval(interval);
-  };
-}, []);
+    loadGolfers();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ---- Load teams for this league ----
   useEffect(() => {
