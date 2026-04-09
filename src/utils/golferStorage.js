@@ -4,7 +4,6 @@ const ESPN_SCOREBOARD_URL =
   "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811941";
 
 // Normalize names for comparison: remove periods, extra spaces, lowercase
-// "S. Scheffler" → "s scheffler", "K. Kitayama" → "k kitayama"
 function normalizeName(name = "") {
   return name.replace(/\./g, "").replace(/\s+/g, " ").trim().toLowerCase();
 }
@@ -35,7 +34,8 @@ function buildScoreMap(espnData) {
 export async function syncLiveScoresToBucket() {
   try {
     const espnRes = await fetch(ESPN_SCOREBOARD_URL);
-    if (!espnRes.ok) throw new Error("ESPN fetch failed");
+    if (!espnRes.ok) throw new Error(`ESPN fetch failed: ${espnRes.status}`);
+
     const espnData = await espnRes.json();
     const scoreMap = buildScoreMap(espnData);
 
@@ -48,11 +48,13 @@ export async function syncLiveScoresToBucket() {
 
       if (liveScore !== undefined) {
         console.log(`[Match] "${g.golferName}" → score ${liveScore}`);
+        return { ...g, totalScore: liveScore };
       } else {
-        console.warn(`[No match] "${g.golferName}" (key="${key}") not found in ESPN data`);
+        console.warn(
+          `[No match] "${g.golferName}" (key="${key}") not found in ESPN data`
+        );
+        return g;
       }
-
-      return liveScore !== undefined ? { ...g, totalScore: liveScore } : g;
     });
 
     const byBucket = updated.reduce((acc, g) => {
@@ -61,20 +63,50 @@ export async function syncLiveScoresToBucket() {
       return acc;
     }, {});
 
-    await Promise.all(
-      Object.entries(byBucket).map(([bucketId, golferGroup]) =>
-        fetch(`${BUCKET_GOLFERS_URL}/${bucketId}`, {
-          method: "PUT",
-          headers: COMMON_HEADERS,
-          body: JSON.stringify(golferGroup),
-        })
-      )
-    );
+    try {
+      const putResults = await Promise.all(
+        Object.entries(byBucket).map(async ([bucketId, golferGroup]) => {
+          const payload = golferGroup.map(({ bucketId, ...rest }) => rest);
 
-    console.log("[Sync] Bucket updated successfully");
+          const url = `${BUCKET_GOLFERS_URL}/${bucketId}`;
+          console.log("[PUT] url:", url);
+          console.log("[PUT] payload sample:", payload.slice(0, 2));
+
+          const res = await fetch(url, {
+            method: "PUT",
+            headers: COMMON_HEADERS,
+            body: JSON.stringify(payload),
+          });
+
+          const text = await res.text();
+          console.log("[PUT] status:", res.status, "bucketId:", bucketId);
+          console.log("[PUT] response text:", text);
+
+          if (!res.ok) {
+            throw new Error(
+              `Bucket PUT failed for ${bucketId}: ${res.status} ${text}`
+            );
+          }
+
+          return { bucketId, status: res.status, text };
+        })
+      );
+
+      console.log("[PUT] success results:", putResults);
+      console.log("[Sync] Bucket updated successfully");
+    } catch (putErr) {
+      console.warn(
+        "[Sync] Bucket update failed, but returning live scores to UI:",
+        putErr.message
+      );
+    }
+
     return updated;
   } catch (err) {
-    console.warn("Live score sync failed, falling back to bucket data:", err.message);
+    console.warn(
+      "Live score sync failed before UI update, falling back to bucket data:",
+      err.message
+    );
     return getAllGolfers();
   }
 }
