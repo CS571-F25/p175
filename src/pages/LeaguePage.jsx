@@ -1,10 +1,9 @@
-// Page that shows all teams in a league in a scoreboard format based on totalScore
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Spinner } from "react-bootstrap";
 import { getLeagueById, getTeamsForLeague } from "../utils/leagueAndTeamStorage";
 import { getDraftForLeague } from "../utils/draftStorage";
+import { syncLiveScoresToBucket } from "../utils/golferStorage";
 import LeagueNavbar from "../components/LeagueNavbar";
 
 export default function LeaguePage() {
@@ -28,9 +27,42 @@ export default function LeaguePage() {
 
         // 2. Get teams for that league
         const fetchedTeams = await getTeamsForLeague(league.leagueId);
-        setTeams(fetchedTeams);
 
-        // 3. Check if the draft is complete (medals only show once done)
+        // 3. Get live golfers
+        const golfers = await syncLiveScoresToBucket();
+
+        // 4. Build golfer lookup by ID
+        const golferMap = new Map(
+          golfers.map((g) => [String(g.golferId), g])
+        );
+
+        // 5. Recompute each team's live total score from best 5 golfers
+        const teamsWithLiveScores = fetchedTeams.map((team) => {
+          const golferIds = Array.isArray(team.golferIds) ? team.golferIds : [];
+
+          const teamGolfers = golferIds
+            .map((id) => golferMap.get(String(id)))
+            .filter(Boolean)
+            .sort((a, b) => {
+              if ((a.totalScore ?? 0) !== (b.totalScore ?? 0)) {
+                return (a.totalScore ?? 0) - (b.totalScore ?? 0);
+              }
+              return (a.preTournamentRank || 999) - (b.preTournamentRank || 999);
+            });
+
+          const liveTotalScore = teamGolfers
+            .slice(0, 5)
+            .reduce((sum, g) => sum + (typeof g.totalScore === "number" ? g.totalScore : 0), 0);
+
+          return {
+            ...team,
+            totalScore: liveTotalScore,
+          };
+        });
+
+        setTeams(teamsWithLiveScores);
+
+        // 6. Check if the draft is complete
         const draft = await getDraftForLeague(league.leagueId);
         setIsDraftComplete(!!draft && draft.inProgress === false);
       } catch (err) {
@@ -48,17 +80,14 @@ export default function LeaguePage() {
 
   return (
     <div className="bb-league-page">
-      {/* Secondary nav — full width */}
       <LeagueNavbar active="leaderboard" />
 
-      {/* League name pill */}
       <div className="bb-league-pill-wrapper">
         <span className="bb-league-pill">
           {leagueName ? leagueName.toUpperCase() : "LOADING..."}
         </span>
       </div>
 
-      {/* Leaderboard area */}
       <div className="bb-leaderboard-wrapper">
         <div className="bb-leaderboard-header">
           <span className="bb-col-pos">Pos.</span>
@@ -80,9 +109,7 @@ export default function LeaguePage() {
         {!loading &&
           !errorMsg &&
           [...teams]
-            .sort(
-              (a, b) => (a.totalScore ?? 0) - (b.totalScore ?? 0)
-            )
+            .sort((a, b) => (a.totalScore ?? 0) - (b.totalScore ?? 0))
             .map((team, idx) => {
               let rankClass = "";
 
