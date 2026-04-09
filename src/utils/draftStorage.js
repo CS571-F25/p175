@@ -154,7 +154,7 @@ export async function makePickOnDraft({ draft, golfer, teams }) {
   }
 
   const numberOfTeams = draft.numberOfTeams;
-  const picksPerTeam = draft.picksPerTeam ?? 6;
+  const picksPerTeam = draft.picksPerTeam ?? 7;
   const totalPicks = numberOfTeams * picksPerTeam;
 
   const currentPick = draft.currentPickNumber;
