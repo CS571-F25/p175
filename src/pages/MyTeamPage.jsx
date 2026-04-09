@@ -82,23 +82,44 @@ export default function MyTeamPage() {
 
   // ---- derive my golfers + sort by best score ----
   const myGolfersSorted = useMemo(() => {
-    if (!myTeam || !Array.isArray(myTeam.golferIds)) return [];
+  if (!myTeam || !Array.isArray(myTeam.golferIds)) {
+    console.log("myTeam missing or golferIds not array", myTeam);
+    return [];
+  }
 
-    // const idSet = new Set(myTeam.golferIds);
-    // const mine = allGolfers.filter((g) => idSet.has(g.golferId));
-    const idSet = new Set((myTeam.golferIds || []).map(String));
-    const mine = allGolfers.filter((g) => idSet.has(String(g.golferId)));
+  console.log("myTeam.golferIds raw:", myTeam.golferIds);
+  console.log("allGolfers length:", allGolfers.length);
 
-    console.log("filtered mine", mine);
+  const idSet = new Set((myTeam.golferIds || []).map(String));
+  console.log("idSet:", [...idSet]);
 
-    // Lower totalScore is better; tie-break by preTournamentRank
-    return mine.sort((a, b) => {
-      if (a.totalScore !== b.totalScore) {
-        return a.totalScore - b.totalScore;
-      }
-      return (a.preTournamentRank || 999) - (b.preTournamentRank || 999);
-    });
-  }, [myTeam, allGolfers]);
+  console.log(
+    "all golfer ids sample:",
+    allGolfers.slice(0, 15).map((g) => ({
+      golferId: String(g.golferId),
+      golferName: g.golferName,
+      totalScore: g.totalScore,
+    }))
+  );
+
+  const mine = allGolfers.filter((g) => idSet.has(String(g.golferId)));
+
+  console.log(
+    "matching golfers:",
+    mine.map((g) => ({
+      golferId: g.golferId,
+      golferName: g.golferName,
+      totalScore: g.totalScore,
+    }))
+  );
+
+  return mine.sort((a, b) => {
+    if (a.totalScore !== b.totalScore) {
+      return a.totalScore - b.totalScore;
+    }
+    return (a.preTournamentRank || 999) - (b.preTournamentRank || 999);
+  });
+}, [myTeam, allGolfers]);
 
   // ---- total team score (best five golfers only) ----
   const totalTeamScore = useMemo(() => {
