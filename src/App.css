@@ -36,14 +36,14 @@ body {
   padding-top: 34px;
 }
 
-/* Full-width secondary nav just follows parent width */
+/* Full-width secondary nav */
 .bb-subnav {
   position: fixed;
-  top: 64px;                        /* sits right under the main navbar */
+  top: 64px;
   left: 0;
   right: 0;
-  width: 100vw;                     /* full browser width */
-  margin-left: calc(50% - 50vw);    /* align with the rest of the app */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
   background-color: #e5e7eb;
   display: flex;
   justify-content: center;
@@ -72,6 +72,7 @@ body {
   margin-top: 24px;
   display: flex;
   justify-content: center;
+  padding: 0 1rem;
 }
 
 .bb-league-pill {
@@ -81,6 +82,7 @@ body {
   border-radius: 999px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-align: center;
 }
 
 /* Leaderboard container */
@@ -149,9 +151,9 @@ body {
   border: 1px solid #fecdd3;
 }
 
-/* Listing other teams golfers */
+/* Golfer lines inside team cards */
 .bb-team-golfers {
-  grid-column: 1 / -1;         /* span all columns of the outer grid */
+  grid-column: 1 / -1;
   margin-top: 0.45rem;
   display: flex;
   flex-direction: column;
@@ -160,7 +162,7 @@ body {
 
 .bb-team-golfer-line {
   display: grid;
-  grid-template-columns: 0.8fr 3fr 3fr 1fr;   /* EXACT match to outer grid */
+  grid-template-columns: 0.8fr 3fr 3fr 1fr;
   align-items: center;
   font-size: 0.82rem;
   color: #6b7280;
@@ -187,21 +189,10 @@ body {
   color: #374151;
 }
 
-.bb-col-pos {
-  text-align: left;
-}
-
-.bb-col-name {
-  text-align: left;
-}
-
-.bb-col-thru {
-  text-align: center;
-}
-
-.bb-col-score {
-  text-align: right;
-}
+.bb-col-pos { text-align: left; }
+.bb-col-name { text-align: left; }
+.bb-col-thru { text-align: center; }
+.bb-col-score { text-align: right; }
 
 .bb-team-name {
   font-weight: 500;
@@ -215,25 +206,36 @@ body {
   color: #6b7280;
 }
 
+.bb-leaderboard-error {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  color: #b91c1c;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
 /*///////////////////////////////////*/
 /*          FOR DRAFT PAGE           */
 /*///////////////////////////////////*/
-/* Area BELOW LeagueNavbar: rankings (left) + board (right) */
-.bb-draft-main {
-  flex: 1;
-  display: flex;
-  overflow: hidden;  
-  height: calc(100vh - var(--bb-draft-top-offset));
-}
 
 .bb-draft-page {
   width: 100vw;
   margin-left: calc(50% - 50vw);
-  min-height: calc(100vh - 70px); /* main navbar height */
+  min-height: calc(100vh - 70px);
   background-color: #f3f4f6;
   display: flex;
   padding-top: 50px;
-  flex-direction: column; /* navbar on top, content below */
+  flex-direction: column;
+}
+
+/* Area below LeagueNavbar: rankings (left) + board (right) */
+.bb-draft-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  height: calc(100vh - 140px);
 }
 
 .bb-draft-board-intro {
@@ -242,28 +244,27 @@ body {
   align-items: center;
   text-align: center;
   gap: 0.75rem;
+  padding: 1rem;
 }
 
 .bb-draft-board-intro-text {
   margin: 0;
 }
 
-/* Left panel */
+/* Left panel: Rankings */
 .bb-draft-rankings {
-  width: 360px;              /* tweak as you like */
+  width: 360px;
   min-width: 280px;
   max-width: 360px;
   background-color: #ffffff;
   border-right: 1px solid #e5e7eb;
   padding-left: 20px;
-
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 140px);
-
-
+  height: 100%;
 }
+
 .bb-draft-rankings-title {
   font-size: 1.1rem;
   font-weight: 600;
@@ -277,7 +278,6 @@ body {
   overflow-y: auto;
 }
 
-/* Table */
 .bb-draft-rankings-table {
   width: 100%;
   border-collapse: collapse;
@@ -298,31 +298,18 @@ body {
   border-bottom: 1px solid #f1f5f9;
 }
 
-.bb-draft-col-rank {
-  width: 3rem;
-  text-align: right;
-}
+.bb-draft-col-rank { width: 3rem; text-align: right; }
+.bb-draft-col-player { width: 100%; }
+.bb-draft-col-country { width: 4rem; text-align: center; }
 
-.bb-draft-col-player {
-  width: 100%;
-}
-
-.bb-draft-col-country {
-  width: 4rem;
-  text-align: center;
-}
-
-/* Row hover */
 .bb-draft-row-hover {
   background-color: #eef2ff;
 }
 
-/* Player cell with Draft button */
 .bb-draft-player-name {
   font-weight: 500;
 }
 
-/* tiny pill button that appears on hover if canDraft */
 .bb-draft-btn {
   margin-left: 0.5rem;
   padding: 0.15rem 0.55rem;
@@ -339,13 +326,14 @@ body {
   background-color: #1d4ed8;
 }
 
-/* Right side: draft board area shell */
+/* Right side: draft board area */
 .bb-draft-board-shell {
   flex: 1;
   padding: 1.5rem 2rem;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;  
+  overflow: hidden;
+  min-width: 0;     /* critical: allows flex child to shrink below content width */
 }
 
 .bb-draft-board-title {
@@ -365,67 +353,101 @@ body {
   color: #6b7280;
 }
 
+/* Live draft wrapper (parent of the board inside the shell) */
+.bb-draft-board-live-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /*///////////////////////////////////////*/
-/*          FOR PREDRAFT BOARD           */
+/*          PREDRAFT START BUTTON        */
 /*///////////////////////////////////////*/
 .bb-draft-start-btn {
-  background-color: #2563eb;    /* Blue-600 */
+  background-color: #2563eb;
   color: white;
   padding: 0.75rem 1.75rem;
   font-size: 1.1rem;
-  font-weight: 00;
+  font-weight: 500;
   border: none;
-  border-radius: 999px;         /* pill shape */
+  border-radius: 999px;
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
 .bb-draft-start-btn:hover {
-  background-color: #1e40af;    /* Blue-800 */
+  background-color: #1e40af;
   transform: translateY(-2px);
 }
 
 .bb-draft-start-btn:active {
-  background-color: #1d4ed8;    /* Blue-700 */
+  background-color: #1d4ed8;
   transform: translateY(0px);
 }
 
 .bb-draft-start-btn:disabled {
-  background-color: #93c5fd;    /* Blue-300 */
+  background-color: #93c5fd;
   cursor: not-allowed;
 }
 
-
 /*///////////////////////////////////////*/
-/*          LIVE DRAFT GRID              */
+/*          LIVE DRAFT BOARD             */
 /*///////////////////////////////////////*/
 .bb-live-draft-board {
   width: 100%;
-  height: 100%;
+  flex: 1;
   border-radius: 0.75rem;
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
   padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  min-height: 0;       /* so children can scroll */
+  overflow: hidden;
 }
 
-/* Grid: one column per team */
+.bb-live-draft-now {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.bb-now-drafting-text {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.bb-now-drafting-name {
+  color: #2563eb;
+}
+
+/* The actual grid (scrolling container) */
 .bb-draft-grid {
+  flex: 1;
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(140px, 1fr);
   gap: 1rem;
+  overflow-x: auto;
+  overflow-y: auto;
+  padding-bottom: 0.5rem;    /* breathing room for horizontal scrollbar */
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Each team column */
 .bb-draft-grid-column {
   display: flex;
   flex-direction: column;
+  min-width: 140px;
 }
 
-/* Team header (pill-like) */
+/* Team header pill */
 .bb-draft-team-header {
   display: flex;
   align-items: center;
@@ -448,46 +470,23 @@ body {
   justify-content: center;
   font-weight: 600;
   font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 .bb-draft-team-name {
   font-weight: 600;
   font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Column of six pick cells */
 .bb-draft-pick-column-cells {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-/* Individual pick box */
-.bb-draft-pick-cell {
-  height: 56px;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  background-color: #f9fafb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  color: #6b7280;
-}
-
-.bb-now-drafting-text {
-  text-align: center;
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #1f2937; /* slate-800 */
-}
-
-.bb-now-drafting-name {
-  color: #2563eb; /* blue-600 */
-}
-
-/* Individual pick box */
 .bb-draft-pick-cell {
   height: 88px;
   border-radius: 0.75rem;
@@ -502,14 +501,12 @@ body {
   color: #6b7280;
 }
 
-/* Drafted cell variant */
 .bb-draft-pick-cell--taken {
-  background-color: #2563eb;   /* blue */
+  background-color: #2563eb;
   border-color: #1d4ed8;
-  color: #eff6ff;              /* light text */
+  color: #eff6ff;
 }
 
-/* Inner text pieces */
 .bb-pick-label {
   font-size: 1rem;
   font-weight: 600;
@@ -520,10 +517,218 @@ body {
   margin-top: 0.1rem;
   font-size: 1rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .bb-pick-country {
   margin-top: 0.1rem;
   font-size: 0.9rem;
   opacity: 0.95;
+}
+
+
+/*///////////////////////////////////////*/
+/*          RESPONSIVE: TABLET           */
+/*///////////////////////////////////////*/
+@media (max-width: 1024px) {
+  .bb-subnav {
+    gap: 2rem;
+  }
+
+  .bb-draft-rankings {
+    width: 300px;
+    min-width: 240px;
+    max-width: 300px;
+    padding-left: 0;
+  }
+
+  .bb-draft-board-shell {
+    padding: 1rem 1.25rem;
+  }
+}
+
+
+/*///////////////////////////////////////*/
+/*          RESPONSIVE: MOBILE           */
+/*///////////////////////////////////////*/
+@media (max-width: 768px) {
+  #root {
+    padding-top: 70px;
+  }
+
+  .bb-subnav {
+    gap: 1rem;
+    padding: 0.6rem 0;
+  }
+
+  .bb-subnav-link {
+    font-size: 0.95rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Leaderboard */
+  .bb-league-pill {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .bb-leaderboard-wrapper {
+    padding: 0.75rem;
+  }
+
+  .bb-leaderboard-header,
+  .bb-leaderboard-row,
+  .bb-leaderboard-header.bb-with-thru,
+  .bb-leaderboard-row.bb-with-thru {
+    grid-template-columns: 0.6fr 2.5fr 2fr 1fr;
+  }
+
+  .bb-leaderboard-header {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .bb-leaderboard-row {
+    padding: 0.75rem 0.9rem;
+    border-radius: 1rem;
+  }
+
+  .bb-team-golfer-line {
+    grid-template-columns: 0.6fr 2.5fr 2fr 1fr;
+    font-size: 0.78rem;
+  }
+
+  /* Draft page: stack board on top, rankings below */
+  .bb-draft-page {
+    padding-top: 50px;
+  }
+
+  .bb-draft-main {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .bb-draft-board-shell {
+    order: 1;       /* board first */
+    padding: 1rem;
+    height: 70vh;   /* give it real height since parent no longer sets it */
+    min-height: 400px;
+  }
+
+  .bb-draft-rankings {
+    order: 2;       /* rankings below */
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-top: 1px solid #e5e7eb;
+    height: 60vh;
+    min-height: 300px;
+    padding-left: 0;
+  }
+
+  .bb-draft-board-title {
+    font-size: 1.2rem;
+  }
+
+  /* Draft grid: already scrolls horizontally — just tighten columns */
+  .bb-draft-grid {
+    grid-auto-columns: minmax(130px, 160px);
+    gap: 0.75rem;
+  }
+
+  .bb-draft-grid-column {
+    min-width: 130px;
+  }
+
+  .bb-live-draft-board {
+    padding: 1rem;
+  }
+
+  .bb-live-draft-now,
+  .bb-now-drafting-text {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .bb-draft-pick-cell {
+    height: 76px;
+    padding: 0.4rem 0.55rem;
+  }
+
+  .bb-pick-label,
+  .bb-pick-golfer {
+    font-size: 0.85rem;
+  }
+
+  .bb-pick-country {
+    font-size: 0.75rem;
+  }
+}
+
+
+/*///////////////////////////////////////*/
+/*       RESPONSIVE: SMALL PHONE         */
+/*///////////////////////////////////////*/
+@media (max-width: 480px) {
+  .bb-subnav {
+    gap: 0.5rem;
+  }
+
+  .bb-subnav-link {
+    font-size: 0.85rem;
+  }
+
+  .bb-league-pill {
+    padding: 0.45rem 1rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+  }
+
+  .bb-leaderboard-header,
+  .bb-leaderboard-row,
+  .bb-leaderboard-header.bb-with-thru,
+  .bb-leaderboard-row.bb-with-thru {
+    grid-template-columns: 0.5fr 2.2fr 1.8fr 1fr;
+  }
+
+  .bb-team-golfer-line {
+    grid-template-columns: 0.5fr 2.2fr 1.8fr 1fr;
+    font-size: 0.72rem;
+  }
+
+  .bb-team-golfer-name {
+    font-size: 0.75rem;
+  }
+
+  .bb-leaderboard-row {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .bb-draft-grid {
+    grid-auto-columns: minmax(120px, 140px);
+  }
+
+  .bb-draft-grid-column {
+    min-width: 120px;
+  }
+
+  .bb-draft-team-header {
+    padding: 0.4rem 0.7rem;
+    gap: 0.3rem;
+  }
+
+  .bb-draft-team-initial {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem;
+  }
+
+  .bb-draft-team-name {
+    font-size: 0.85rem;
+  }
 }
