@@ -679,23 +679,28 @@ body {
   }
 
   .bb-draft-pick-cell {
-    height: 58px;
-    padding: 0.3rem 0.45rem;
+    height: auto;           /* let content determine height */
+    min-height: 62px;
+    padding: 0.35rem 0.45rem;
     border-radius: 0.5rem;
+    justify-content: flex-start;   /* top-align so nothing gets clipped */
   }
 
   .bb-pick-label {
     font-size: 0.7rem;
+    line-height: 1.1;
   }
 
   .bb-pick-golfer {
     font-size: 0.72rem;
-    margin-top: 0.05rem;
+    line-height: 1.2;
+    margin-top: 0.15rem;
   }
 
   .bb-pick-country {
     font-size: 0.65rem;
-    margin-top: 0;
+    line-height: 1.1;
+    margin-top: 0.1rem;
   }
 }
 
@@ -763,19 +768,23 @@ body {
   }
 
   .bb-draft-pick-cell {
-    height: 50px;
-    padding: 0.25rem 0.4rem;
+    height: auto;
+    min-height: 54px;
+    padding: 0.3rem 0.4rem;
   }
 
   .bb-pick-label {
     font-size: 0.65rem;
+    line-height: 1.1;
   }
 
   .bb-pick-golfer {
     font-size: 0.68rem;
+    line-height: 1.2;
   }
 
   .bb-pick-country {
     font-size: 0.6rem;
+    line-height: 1.1;
   }
 }
