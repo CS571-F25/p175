@@ -54,7 +54,7 @@ export async function createDraftForLeague(leagueId) {
     .sort(() => Math.random() - 0.5)
     .map((t) => t.teamId);
 
-  const picksPerTeam = 7;
+  const picksPerTeam = 6;
   const currentPickNumber = 1;
 
   // who is on the clock for pick 1?
@@ -154,7 +154,7 @@ export async function makePickOnDraft({ draft, golfer, teams }) {
   }
 
   const numberOfTeams = draft.numberOfTeams;
-  const picksPerTeam = draft.picksPerTeam ?? 7;
+  const picksPerTeam = draft.picksPerTeam ?? 6;
   const totalPicks = numberOfTeams * picksPerTeam;
 
   const currentPick = draft.currentPickNumber;

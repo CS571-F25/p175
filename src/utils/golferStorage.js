@@ -1,7 +1,7 @@
 import { getAllGolfers, BUCKET_GOLFERS_URL, COMMON_HEADERS } from "./golfers";
 
 const ESPN_SCOREBOARD_URL =
-  "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811941";
+  "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811942";
 
 // Normalize names for comparison: remove periods, extra spaces, lowercase
 function normalizeName(name = "") {
