@@ -6,8 +6,12 @@ const ESPN_SCOREBOARD_URL =
 // Normalize names for comparison: remove periods, extra spaces, lowercase
 function normalizeName(name = "") {
   return name
-    .normalize("NFD")                     // decompose: "Å" → "A" + combining ring
-    .replace(/[\u0300-\u036f]/g, "")      // strip combining marks
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ø/gi, "o")
+    .replace(/æ/gi, "ae")
+    .replace(/ß/gi, "ss")
+    .replace(/ł/gi, "l")
     .replace(/\./g, "")
     .replace(/\s+/g, " ")
     .trim()
