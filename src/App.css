@@ -93,8 +93,13 @@ body {
 .bb-leaderboard-header,
 .bb-leaderboard-row {
   display: grid;
-  grid-template-columns: 0.8fr 3fr 1fr;
+  grid-template-columns: 0.8fr 3fr 3fr 1fr;
   align-items: center;
+}
+
+.bb-leaderboard-header.bb-with-thru,
+.bb-leaderboard-row.bb-with-thru {
+  grid-template-columns: 0.8fr 3fr 3fr 1fr;
 }
 
 .bb-leaderboard-header {
@@ -146,6 +151,7 @@ body {
 
 /* Listing other teams golfers */
 .bb-team-golfers {
+  grid-column: 1 / -1;         /* span all columns of the outer grid */
   margin-top: 0.45rem;
   display: flex;
   flex-direction: column;
@@ -153,20 +159,30 @@ body {
 }
 
 .bb-team-golfer-line {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: 0.8fr 3fr 3fr 1fr;   /* EXACT match to outer grid */
+  align-items: center;
   font-size: 0.82rem;
   color: #6b7280;
 }
 
+.bb-team-golfer-spacer {
+  /* empty - aligns with Pos column */
+}
+
 .bb-team-golfer-name {
+  text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.bb-team-golfer-thru {
+  text-align: center;
+}
+
 .bb-team-golfer-score {
+  text-align: right;
   font-weight: 600;
   color: #374151;
 }
@@ -177,6 +193,10 @@ body {
 
 .bb-col-name {
   text-align: left;
+}
+
+.bb-col-thru {
+  text-align: center;
 }
 
 .bb-col-score {

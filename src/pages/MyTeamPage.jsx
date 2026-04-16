@@ -11,6 +11,8 @@ import {
   getTeamsForLeague,
 } from "../utils/leagueAndTeamStorage";
 import { syncLiveScoresToBucket } from "../utils/golferStorage";
+import { formatThru, formatScore } from "../utils/formatGolfer";
+
 
 export default function MyTeamPage() {
   const { leagueId } = useParams();
@@ -188,12 +190,13 @@ export default function MyTeamPage() {
 
       {/* Table of golfers on this team */}
       <div className="bb-leaderboard-wrapper">
-        <div className="bb-leaderboard-header">
+        <div className="bb-leaderboard-header bb-with-thru">
           <span className="bb-col-pos">Pos.</span>
           <span className="bb-col-name">Golfer</span>
+          <span className="bb-col-thru">Thru</span>
           <span className="bb-col-score">Score</span>
         </div>
-
+        
         {errorMsg && !loading && (
           <div className="bb-leaderboard-error">{errorMsg}</div>
         )}
@@ -210,6 +213,7 @@ export default function MyTeamPage() {
           myGolfersSorted.map((g, idx) => {
             const rowClassName = [
               "bb-leaderboard-row",
+              "bb-with-thru",
               idx < 5 ? "bb-row-top-five" : "bb-row-dropped",
             ].join(" ");
 
@@ -228,7 +232,12 @@ export default function MyTeamPage() {
                     {g.country}
                   </span>
                 </span>
-                <span className="bb-col-score">{g.totalScore}</span>
+                <span 
+                  className="bb-col-thru"
+                >
+                  {formatThru(g)}
+                </span>
+                  <span className="bb-col-score">{formatScore(g.totalScore)}</span>
               </div>
             );
           })}

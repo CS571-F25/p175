@@ -4,6 +4,7 @@ import { Spinner } from "react-bootstrap";
 import { getLeagueById, getTeamsForLeague } from "../utils/leagueAndTeamStorage";
 import { getDraftForLeague } from "../utils/draftStorage";
 import { syncLiveScoresToBucket } from "../utils/golferStorage";
+import { formatThru, formatScore } from "../utils/formatGolfer";
 import LeagueNavbar from "../components/LeagueNavbar";
 
 export default function LeaguePage() {
@@ -90,11 +91,13 @@ export default function LeaguePage() {
       </div>
 
       <div className="bb-leaderboard-wrapper">
-        <div className="bb-leaderboard-header">
+        <div className="bb-leaderboard-header bb-with-thru">
           <span className="bb-col-pos">Pos.</span>
           <span className="bb-col-name">Team Name</span>
+          <span className="bb-col-thru">Thru</span>
           <span className="bb-col-score">Score</span>
         </div>
+      
 
         {errorMsg && !loading && (
           <div className="bb-leaderboard-error">{errorMsg}</div>
@@ -123,24 +126,29 @@ export default function LeaguePage() {
               }
 
               return (
-                <div
-                  key={team.id || idx}
-                  className={`bb-leaderboard-row ${rankClass}`.trim()}
-                >
-                  <span className="bb-col-pos">{idx + 1}.</span>
-                    <span className="bb-col-name">
-                      <div className="bb-team-name">{team.displayName}</div>
-                      <div className="bb-team-golfers">
-                        {(team.golfers || []).map((g) => (
-                          <div key={g.golferId} className="bb-team-golfer-line">
-                            <span className="bb-team-golfer-name">{g.golferName}</span>
-                            <span className="bb-team-golfer-score">{g.totalScore}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </span>
-                  <span className="bb-col-score">{team.totalScore}</span>
+              <div
+                key={team.id || idx}
+                className={`bb-leaderboard-row ${rankClass}`.trim()}
+              >
+                <span className="bb-col-pos">{idx + 1}.</span>
+                <span className="bb-col-name">
+                  <div className="bb-team-name">{team.displayName}</div>
+                </span>
+                <span className="bb-col-thru"></span>
+                <span className="bb-col-score">{formatScore(team.totalScore)}</span>
+
+                {/* Golfer lines span all 4 columns */}
+                <div className="bb-team-golfers">
+                  {(team.golfers || []).map((g) => (
+                    <div key={g.golferId} className="bb-team-golfer-line">
+                      <span className="bb-team-golfer-spacer"></span>
+                      <span className="bb-team-golfer-name">{g.golferName}</span>
+                      <span className="bb-team-golfer-thru">{formatThru(g)}</span>
+                      <span className="bb-team-golfer-score">{formatScore(g.totalScore)}</span>
+                    </div>
+                  ))}
                 </div>
+              </div>
               );
             })}
       </div>

@@ -3,7 +3,6 @@ import { getAllGolfers, BUCKET_GOLFERS_URL, COMMON_HEADERS } from "./golfers";
 const ESPN_SCOREBOARD_URL =
   "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811942";
 
-// Normalize names for comparison: remove periods, extra spaces, lowercase
 function normalizeName(name = "") {
   return name
     .normalize("NFD")
@@ -18,9 +17,59 @@ function normalizeName(name = "") {
     .toLowerCase();
 }
 
+/**
+ * Given a competitor object from ESPN, return { holesThru, currentRound, status, teeTime }.
+ * status: "pre" | "live" | "round-done" | "finished"
+ *   pre         → hasn't started tournament (or hasn't teed off yet today)
+ *   live        → mid-round
+ *   round-done  → finished a round but not the tournament (waiting for next round)
+ *   finished    → completed all scheduled rounds
+ */
+function getGolferStatus(competitor, totalRoundsInEvent = 4) {
+  const periods = competitor.linescores ?? [];
+
+  let holesThru = 0;
+  let currentRound = 0;
+  let completedRounds = 0;
+
+  for (const period of periods) {
+    const holes = period.linescores?.length ?? 0;
+    if (holes > 0) {
+      currentRound = period.period;
+      holesThru = holes;
+      if (holes >= 18) completedRounds++;
+    }
+  }
+
+  // Tournament fully complete
+  if (completedRounds >= totalRoundsInEvent) {
+    return { holesThru: 18, currentRound, status: "finished", teeTime: null };
+  }
+
+  // Finished a round but more rounds remain
+  if (holesThru === 18) {
+    return { holesThru: 18, currentRound, status: "round-done", teeTime: null };
+  }
+
+  // Hasn't teed off — grab tee time if available
+  if (holesThru === 0) {
+    // ESPN puts tee time in the statistics category on the empty period, or on competitor.status
+    const teeTime =
+      competitor.status?.type?.shortDetail ||
+      competitor.status?.displayValue ||
+      null;
+    return { holesThru: 0, currentRound: currentRound || 1, status: "pre", teeTime };
+  }
+
+  // Mid-round
+  return { holesThru, currentRound, status: "live", teeTime: null };
+}
+
 function buildScoreMap(espnData) {
-  const competitors =
-    espnData?.events?.[0]?.competitions?.[0]?.competitors ?? [];
+  const event = espnData?.events?.[0];
+  const competitors = event?.competitions?.[0]?.competitors ?? [];
+  // Some events have 2 rounds (pro-ams), most have 4. Try to detect.
+  const totalRounds = event?.competitions?.[0]?.totalRounds ?? 4;
 
   console.log(`[ESPN] Found ${competitors.length} competitors`);
 
@@ -30,11 +79,14 @@ function buildScoreMap(espnData) {
     const shortName = c.athlete?.shortName;
     const raw = c.score ?? "E";
     const score = raw === "E" ? 0 : parseInt(raw, 10);
+    const { holesThru, currentRound, status, teeTime } = getGolferStatus(c, totalRounds);
 
     if (shortName) {
       const key = normalizeName(shortName);
-      map.set(key, score);
-      console.log(`[ESPN] Mapped: "${shortName}" → key="${key}", score=${score}`);
+      map.set(key, { score, holesThru, currentRound, status, teeTime });
+      console.log(
+        `[ESPN] "${shortName}" → score=${score}, R${currentRound} thru ${holesThru} (${status})`
+      );
     }
   });
 
@@ -54,15 +106,19 @@ export async function syncLiveScoresToBucket() {
 
     const updated = golfers.map((g) => {
       const key = normalizeName(g.golferName);
-      const liveScore = scoreMap.get(key);
+      const live = scoreMap.get(key);
 
-      if (liveScore !== undefined) {
-        console.log(`[Match] "${g.golferName}" → score ${liveScore}`);
-        return { ...g, totalScore: liveScore };
+      if (live) {
+        return {
+          ...g,
+          totalScore: live.score,
+          holesThru: live.holesThru,
+          currentRound: live.currentRound,
+          status: live.status,
+          teeTime: live.teeTime,
+        };
       } else {
-        console.warn(
-          `[No match] "${g.golferName}" (key="${key}") not found in ESPN data`
-        );
+        console.warn(`[No match] "${g.golferName}" (key="${key}")`);
         return g;
       }
     });
@@ -74,13 +130,10 @@ export async function syncLiveScoresToBucket() {
     }, {});
 
     try {
-      const putResults = await Promise.all(
+      await Promise.all(
         Object.entries(byBucket).map(async ([bucketId, golferGroup]) => {
           const payload = golferGroup.map(({ bucketId, ...rest }) => rest);
-
           const url = `${BUCKET_GOLFERS_URL}/${bucketId}`;
-          console.log("[PUT] url:", url);
-          console.log("[PUT] payload sample:", payload.slice(0, 2));
 
           const res = await fetch(url, {
             method: "PUT",
@@ -88,35 +141,20 @@ export async function syncLiveScoresToBucket() {
             body: JSON.stringify(payload),
           });
 
-          const text = await res.text();
-          console.log("[PUT] status:", res.status, "bucketId:", bucketId);
-          console.log("[PUT] response text:", text);
-
           if (!res.ok) {
-            throw new Error(
-              `Bucket PUT failed for ${bucketId}: ${res.status} ${text}`
-            );
+            const text = await res.text();
+            throw new Error(`Bucket PUT failed for ${bucketId}: ${res.status} ${text}`);
           }
-
-          return { bucketId, status: res.status, text };
         })
       );
-
-      console.log("[PUT] success results:", putResults);
       console.log("[Sync] Bucket updated successfully");
     } catch (putErr) {
-      console.warn(
-        "[Sync] Bucket update failed, but returning live scores to UI:",
-        putErr.message
-      );
+      console.warn("[Sync] Bucket update failed, returning live scores to UI:", putErr.message);
     }
 
     return updated;
   } catch (err) {
-    console.warn(
-      "Live score sync failed before UI update, falling back to bucket data:",
-      err.message
-    );
+    console.warn("Live score sync failed, falling back to bucket data:", err.message);
     return getAllGolfers();
   }
 }
