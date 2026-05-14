@@ -1,9 +1,11 @@
 // Landing page -> Create Pool/Join Pool actions
 
+import { useEffect, useState } from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Trophy, Users, Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { getTeamsForUser } from "../utils/leagueAndTeamStorage";
 import logo from "../assets/BirdieBoardLogo.png";
 import PageHeader from "../components/PageHeader";
 import FeatureGrid from "../components/FeatureGrid";
@@ -29,6 +31,16 @@ const features = [
 
 export default function HomePage() {
   const { user } = useAuth();
+  const [primaryLeagueId, setPrimaryLeagueId] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    getTeamsForUser(user.id)
+      .then((teams) => {
+        if (teams.length) setPrimaryLeagueId(teams[0].leagueId);
+      })
+      .catch(() => {});
+  }, [user]);
 
   return (
     <PageContainer className="text-center mt-5 mb-5">
@@ -70,10 +82,21 @@ export default function HomePage() {
               </>
             ) : (
               <>
+                {primaryLeagueId && (
+                  <Button
+                    as={Link}
+                    to={`/league/${primaryLeagueId}`}
+                    variant="primary"
+                    size="lg"
+                  >
+                    My League
+                  </Button>
+                )}
+
                 <Button
                   as={Link}
                   to="/create-league"
-                  variant="primary"
+                  variant="outline-primary"
                   size="lg"
                 >
                   Create a Pool

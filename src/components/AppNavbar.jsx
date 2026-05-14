@@ -35,6 +35,8 @@ export default function AppNavbar() {
         navigate(`/league/${primaryLeagueId}/my-team`);
       } else if (section === "draft") {
         navigate(`/league/${primaryLeagueId}/draft`);
+      } else if (section === "field-tracker") {
+        navigate(`/league/${primaryLeagueId}/field-tracker`);
       }
     } catch (err) {
       console.error(err);
@@ -74,6 +76,9 @@ export default function AppNavbar() {
             </NavDropdown.Item>
             <NavDropdown.Item onClick={() => goToSection("draft")}>
               Draftboard
+            </NavDropdown.Item>
+            <NavDropdown.Item onClick={() => goToSection("field-tracker")}>
+              Field Tracker
             </NavDropdown.Item>
 
             <NavDropdown.Divider />
