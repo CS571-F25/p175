@@ -1,7 +1,7 @@
 import { getAllGolfers, BUCKET_GOLFERS_URL, COMMON_HEADERS } from "./golfers";
 
 const ESPN_SCOREBOARD_URL =
-  "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811942";
+  "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811947";
 
 function normalizeName(name = "") {
   return name
@@ -41,28 +41,34 @@ function getGolferStatus(competitor, totalRoundsInEvent = 4) {
     }
   }
 
-  // Tournament fully complete
   if (completedRounds >= totalRoundsInEvent) {
     return { holesThru: 18, currentRound, status: "finished", teeTime: null };
   }
 
-  // Finished a round but more rounds remain
   if (holesThru === 18) {
-    return { holesThru: 18, currentRound, status: "round-done", teeTime: null };
+    // Finished a round — next round's tee time lives in the next period
+    const nextPeriod = periods.find((p) => p.period === currentRound + 1);
+    const teeTime = extractTeeTime(nextPeriod);
+    return { holesThru: 18, currentRound, status: "round-done", teeTime };
   }
 
-  // Hasn't teed off — grab tee time if available
   if (holesThru === 0) {
-    // ESPN puts tee time in the statistics category on the empty period, or on competitor.status
-    const teeTime =
-      competitor.status?.type?.shortDetail ||
-      competitor.status?.displayValue ||
-      null;
-    return { holesThru: 0, currentRound: currentRound || 1, status: "pre", teeTime };
+    // Hasn't teed off — find the first period without completed holes
+    const upcomingRound = currentRound === 0 ? 1 : currentRound;
+    const pendingPeriod = periods.find((p) => p.period === upcomingRound);
+    const teeTime = extractTeeTime(pendingPeriod);
+    return { holesThru: 0, currentRound: upcomingRound, status: "pre", teeTime };
   }
 
-  // Mid-round
   return { holesThru, currentRound, status: "live", teeTime: null };
+}
+
+function extractTeeTime(period) {
+  if (!period) return null;
+  const stats = period.statistics?.categories?.[0]?.stats ?? [];
+  // Tee time is the last stat entry — it's the only one with just displayValue, no value
+  const teeStat = stats.find((s) => s.value === undefined && s.displayValue);
+  return teeStat?.displayValue ?? null;
 }
 
 function buildScoreMap(espnData) {

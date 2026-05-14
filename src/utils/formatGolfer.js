@@ -8,12 +8,23 @@ export function formatThru(golfer) {
   const { status, holesThru, teeTime } = golfer;
 
   if (status === "finished") return "F";
-  if (status === "round-done") return "F"; // finished round, more rounds to come
-  if (status === "pre") return teeTime ? teeTime : "—";
+  if (status === "round-done") return "F";
+  if (status === "pre") return teeTime ? formatTeeTime(teeTime) : "—";
   if (status === "live") return holesThru > 0 ? `thru ${holesThru}` : "—";
 
-  // Fallback for golfers with no live data (e.g. withdrew, not in field)
   return "—";
+}
+
+function formatTeeTime(raw) {
+  const date = new Date(raw);
+  if (isNaN(date.getTime())) return raw; // fallback if parse fails
+
+  return date.toLocaleTimeString("en-US", {
+    timeZone: "America/Chicago",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 /**
