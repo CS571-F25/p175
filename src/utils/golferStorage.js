@@ -99,6 +99,17 @@ function buildScoreMap(espnData) {
   return map;
 }
 
+export async function getTournamentName() {
+  try {
+    const res = await fetch(ESPN_SCOREBOARD_URL);
+    if (!res.ok) return "Tournament";
+    const data = await res.json();
+    return data?.events?.[0]?.name ?? "Tournament";
+  } catch {
+    return "Tournament";
+  }
+}
+
 export async function syncLiveScoresToBucket() {
   try {
     const espnRes = await fetch(ESPN_SCOREBOARD_URL);

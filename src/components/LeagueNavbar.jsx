@@ -14,6 +14,8 @@ export default function LeagueNavbar({ active = "leaderboard" }) {
       navigate(`/league/${leagueId}/my-team`);
     } else if (tab === "draft") {
       navigate(`/league/${leagueId}/draft`);
+    } else if (tab === "field-tracker") {
+      navigate(`/league/${leagueId}/field-tracker`);
     }
   }
 
@@ -44,6 +46,15 @@ export default function LeagueNavbar({ active = "leaderboard" }) {
         onClick={() => goTo("draft")}
       >
         Draft
+      </button>
+
+      <button
+        className={`bb-subnav-link ${
+          active === "field-tracker" ? "bb-subnav-link-active" : ""
+        }`}
+        onClick={() => goTo("field-tracker")}
+      >
+        Field Tracker
       </button>
     </div>
   );

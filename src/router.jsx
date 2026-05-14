@@ -11,6 +11,7 @@ import CreateLeaguePage from './pages/CreateLeaguePage';
 import LeaguePage from './pages/LeaguePage';
 import MyTeamPage from './pages/MyTeamPage';
 import DraftPage from './pages/DraftPage';
+import FieldTrackerPage from './pages/FieldTrackerPage';
 
 export default function AppRoutes() {
   return (
@@ -22,8 +23,9 @@ export default function AppRoutes() {
       <Route path="/join-league" element={<JoinLeaguePage />} />
       <Route path="/create-league" element={<CreateLeaguePage />} />
       <Route path="/league/:leagueId" element={<LeaguePage />} />
-      <Route path="/league/:leagueId/my-team"element={<MyTeamPage />}/>
+      <Route path="/league/:leagueId/my-team" element={<MyTeamPage />} />
       <Route path="/league/:leagueId/draft" element={<DraftPage />} />
+      <Route path="/league/:leagueId/field-tracker" element={<FieldTrackerPage />} />
     </Routes>
   );
 }

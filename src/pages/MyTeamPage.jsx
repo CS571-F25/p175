@@ -146,7 +146,7 @@ export default function MyTeamPage() {
   return (
     <div className="bb-league-page">
       {/* Sub-nav: Leaderboard / My Team / Draft */}
-      <LeagueNavbar active="team" />
+      <LeagueNavbar active="my-team" />
 
       {/* Username pill at the top */}
       <div className="bb-league-pill-wrapper">
