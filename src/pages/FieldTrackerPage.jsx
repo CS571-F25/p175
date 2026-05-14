@@ -4,6 +4,7 @@ import { Spinner } from "react-bootstrap";
 
 import LeagueNavbar from "../components/LeagueNavbar";
 import { getLeagueById, getTeamsForLeague } from "../utils/leagueAndTeamStorage";
+import { getDraftForLeague } from "../utils/draftStorage";
 import { syncLiveScoresToBucket, getTournamentName } from "../utils/golferStorage";
 import { formatThru, formatScore } from "../utils/formatGolfer";
 
@@ -31,6 +32,7 @@ export default function FieldTrackerPage() {
   const [tournamentName, setTournamentName] = useState("");
   const [allGolfers, setAllGolfers] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [draft, setDraft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -43,11 +45,12 @@ export default function FieldTrackerPage() {
         setLoading(true);
         setErrorMsg("");
 
-        const [league, golfers, leagueTeams, tName] = await Promise.all([
+        const [league, golfers, leagueTeams, tName, draftData] = await Promise.all([
           getLeagueById(leagueId),
           syncLiveScoresToBucket(),
           getTeamsForLeague(leagueId),
           getTournamentName(),
+          getDraftForLeague(leagueId).catch(() => null),
         ]);
 
         if (cancelled) return;
@@ -56,6 +59,7 @@ export default function FieldTrackerPage() {
         setAllGolfers(golfers);
         setTeams(leagueTeams);
         setTournamentName(tName);
+        setDraft(draftData);
       } catch (err) {
         console.error(err);
         if (!cancelled) setErrorMsg(err.message || "Failed to load field data.");
@@ -78,6 +82,17 @@ export default function FieldTrackerPage() {
     });
     return map;
   }, [teams]);
+
+  // Build golferId → overall pick number map
+  const golferToPickNum = useMemo(() => {
+    const map = new Map();
+    (draft?.picks ?? []).forEach((pick) => {
+      if (pick.golferId != null) {
+        map.set(String(pick.golferId), pick.overallPick);
+      }
+    });
+    return map;
+  }, [draft]);
 
   // Sort all golfers: by score asc, then started players before pre-round at same score
   const sortedGolfers = useMemo(() => {
@@ -113,6 +128,7 @@ export default function FieldTrackerPage() {
           <span className="bb-col-name">Golfer</span>
           <span className="bb-col-thru">Thru</span>
           <span className="bb-col-score">Score</span>
+          <span className="bb-col-pick">Pick No.</span>
           <span className="bb-col-team">Team</span>
         </div>
 
@@ -132,6 +148,7 @@ export default function FieldTrackerPage() {
           sortedGolfers.map((g) => {
             const teamName = golferToTeam.get(String(g.golferId));
             const isDrafted = !!teamName;
+            const pickNum = golferToPickNum.get(String(g.golferId));
 
             return (
               <div
@@ -147,6 +164,7 @@ export default function FieldTrackerPage() {
                 </span>
                 <span className="bb-col-thru">{formatThru(g)}</span>
                 <span className="bb-col-score">{formatScore(g.totalScore)}</span>
+                <span className="bb-col-pick">{pickNum != null ? pickNum : "—"}</span>
                 <span className={`bb-col-team ${isDrafted ? "bb-ft-team-drafted" : "bb-ft-team-undrafted"}`}>
                   {isDrafted ? teamName : "Undrafted"}
                 </span>

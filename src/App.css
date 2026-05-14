@@ -226,7 +226,7 @@ body {
 .bb-field-tracker-header,
 .bb-field-tracker-row {
   display: grid;
-  grid-template-columns: 0.6fr 3fr 1.2fr 0.9fr 2fr;
+  grid-template-columns: 0.6fr 3fr 1.2fr 0.9fr 0.8fr 2fr;
   column-gap: 0.5rem;
   align-items: center;
 }
@@ -249,6 +249,12 @@ body {
 .bb-ft-row-drafted {
   background-color: #eff6ff;
   border: 1px solid #bfdbfe;
+}
+
+.bb-col-pick {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.85rem;
 }
 
 .bb-col-team {
@@ -644,7 +650,7 @@ body {
 
   .bb-field-tracker-header,
   .bb-field-tracker-row {
-    grid-template-columns: 0.5fr 2.5fr 1.1fr 0.9fr 1.8fr;
+    grid-template-columns: 0.5fr 2.5fr 1.1fr 0.9fr 0.7fr 1.8fr;
     column-gap: 0.35rem;
   }
 
@@ -802,7 +808,7 @@ body {
   /* Field Tracker */
   .bb-field-tracker-header,
   .bb-field-tracker-row {
-    grid-template-columns: 0.5fr 2.2fr 1fr 0.8fr 1.5fr;
+    grid-template-columns: 0.5fr 2.2fr 1fr 0.8fr 0.6fr 1.5fr;
     column-gap: 0.25rem;
     font-size: 0.8rem;
   }
