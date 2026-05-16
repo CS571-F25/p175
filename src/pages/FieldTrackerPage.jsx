@@ -7,6 +7,7 @@ import { getLeagueById, getTeamsForLeague } from "../utils/leagueAndTeamStorage"
 import { getDraftForLeague } from "../utils/draftStorage";
 import { syncLiveScoresToBucket, getTournamentName } from "../utils/golferStorage";
 import { formatThru, formatScore } from "../utils/formatGolfer";
+import RoundScores from "../components/RoundScores";
 
 function assignPositions(sorted) {
   const result = [];
@@ -157,15 +158,18 @@ export default function FieldTrackerPage() {
               >
                 <span className="bb-col-pos">{g.posLabel}</span>
                 <span className="bb-col-name bb-team-name">
-                  {g.golferName}
-                  {g.status === "cut" && (
-                    <span style={{ marginLeft: "0.4rem", fontSize: "0.72rem", color: "#dc2626", fontWeight: 700 }}>
-                      CUT
+                  <div>
+                    {g.golferName}
+                    {g.status === "cut" && (
+                      <span style={{ marginLeft: "0.4rem", fontSize: "0.72rem", color: "#dc2626", fontWeight: 700 }}>
+                        CUT
+                      </span>
+                    )}
+                    <span style={{ marginLeft: "0.5rem", fontSize: "0.8rem", color: "#6b7280" }}>
+                      {g.country}
                     </span>
-                  )}
-                  <span style={{ marginLeft: "0.5rem", fontSize: "0.8rem", color: "#6b7280" }}>
-                    {g.country}
-                  </span>
+                  </div>
+                  <RoundScores roundScores={g.roundScores} />
                 </span>
                 <span className="bb-col-thru">{formatThru(g)}</span>
                 <span className="bb-col-score">{formatScore(g.totalScore)}</span>

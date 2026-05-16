@@ -164,10 +164,10 @@ function buildScoreMap(espnData) {
 
   // Build the score map, applying cut penalties for cut golfers.
   const map = new Map();
-  allData.forEach(({ shortName, score, holesThru, currentRound, status, teeTime }) => {
+  allData.forEach(({ shortName, score, roundScores, holesThru, currentRound, status, teeTime }) => {
     const key = normalizeName(shortName);
     const finalScore = status === "cut" ? score + r3Penalty + r4Penalty : score;
-    map.set(key, { score: finalScore, holesThru, currentRound, status, teeTime });
+    map.set(key, { score: finalScore, holesThru, currentRound, status, teeTime, roundScores });
     console.log(
       `[ESPN] "${shortName}" → score=${finalScore}, R${currentRound} thru ${holesThru} (${status})`
     );
@@ -212,6 +212,7 @@ export async function syncLiveScoresToBucket() {
           currentRound: live.currentRound,
           status: live.status,
           teeTime: live.teeTime,
+          roundScores: live.roundScores ?? {},
         };
         if (live.status === "cut") {
           // Store the pre-penalty base score so future syncs can recalculate correctly.

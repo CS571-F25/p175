@@ -5,7 +5,7 @@ import { Container, Row, Col, Button } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Trophy, Users, Sparkles } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { getTeamsForUser } from "../utils/leagueAndTeamStorage";
+import { getLeaguesForUser } from "../utils/leagueAndTeamStorage";
 import logo from "../assets/BirdieBoardLogo.png";
 import PageHeader from "../components/PageHeader";
 import FeatureGrid from "../components/FeatureGrid";
@@ -31,14 +31,12 @@ const features = [
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [primaryLeagueId, setPrimaryLeagueId] = useState(null);
+  const [userLeagues, setUserLeagues] = useState([]);
 
   useEffect(() => {
     if (!user) return;
-    getTeamsForUser(user.id)
-      .then((teams) => {
-        if (teams.length) setPrimaryLeagueId(teams[0].leagueId);
-      })
+    getLeaguesForUser(user.id)
+      .then(setUserLeagues)
       .catch(() => {});
   }, [user]);
 
@@ -82,16 +80,17 @@ export default function HomePage() {
               </>
             ) : (
               <>
-                {primaryLeagueId && (
+                {userLeagues.map((league) => (
                   <Button
+                    key={league.leagueId}
                     as={Link}
-                    to={`/league/${primaryLeagueId}`}
+                    to={`/league/${league.leagueId}`}
                     variant="primary"
                     size="lg"
                   >
-                    My League
+                    {league.leagueName}
                   </Button>
-                )}
+                ))}
 
                 <Button
                   as={Link}
