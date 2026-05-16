@@ -222,6 +222,11 @@ export default function MyTeamPage() {
                 <span className="bb-col-pos">{idx + 1}.</span>
                 <span className="bb-col-name bb-team-name">
                   {g.golferName}
+                  {g.status === "cut" && (
+                    <span style={{ marginLeft: "0.4rem", fontSize: "0.72rem", color: "#dc2626", fontWeight: 700 }}>
+                      CUT
+                    </span>
+                  )}
                   <span
                     style={{
                       marginLeft: "0.5rem",

@@ -17,15 +17,33 @@ function normalizeName(name = "") {
     .toLowerCase();
 }
 
+// Parse ESPN per-round displayValue (e.g. "-1", "+4", "E") to an integer relative to par.
+function parseRoundScore(displayValue) {
+  if (!displayValue || displayValue === "E") return 0;
+  return parseInt(displayValue, 10) || 0;
+}
+
 /**
  * Given a competitor object from ESPN, return { holesThru, currentRound, status, teeTime }.
- * status: "pre" | "live" | "round-done" | "finished"
+ * status: "pre" | "live" | "round-done" | "finished" | "cut"
  *   pre         → hasn't started tournament (or hasn't teed off yet today)
  *   live        → mid-round
  *   round-done  → finished a round but not the tournament (waiting for next round)
  *   finished    → completed all scheduled rounds
+ *   cut         → missed the cut
  */
 function getGolferStatus(competitor, totalRoundsInEvent = 4) {
+  // ESPN marks cut golfers with an explicit status — check before linescore logic.
+  const espnStatusName = competitor.status?.type?.name ?? "";
+  if (espnStatusName.toUpperCase().includes("CUT")) {
+    const periods = competitor.linescores ?? [];
+    const lastRound = periods.reduce(
+      (max, p) => (typeof p.value === "number" && p.value > 0 ? Math.max(max, p.period) : max),
+      2
+    );
+    return { holesThru: 18, currentRound: lastRound, status: "cut", teeTime: null };
+  }
+
   const periods = competitor.linescores ?? [];
 
   let holesThru = 0;
@@ -74,29 +92,88 @@ function extractTeeTime(period) {
 function buildScoreMap(espnData) {
   const event = espnData?.events?.[0];
   const competitors = event?.competitions?.[0]?.competitors ?? [];
-  // Some events have 2 rounds (pro-ams), most have 4. Try to detect.
   const totalRounds = event?.competitions?.[0]?.totalRounds ?? 4;
 
   console.log(`[ESPN] Found ${competitors.length} competitors`);
 
-  const map = new Map();
+  // First pass — gather all competitor data and per-round scores.
+  const allData = [];
+  let tournamentRound = 1;
 
   competitors.forEach((c) => {
     const shortName = c.athlete?.shortName;
+    if (!shortName) return;
+
     const raw = c.score ?? "E";
     const score = raw === "E" ? 0 : parseInt(raw, 10);
-    const { holesThru, currentRound, status, teeTime } = getGolferStatus(c, totalRounds);
+    const statusInfo = getGolferStatus(c, totalRounds);
 
-    if (shortName) {
-      const key = normalizeName(shortName);
-      map.set(key, { score, holesThru, currentRound, status, teeTime });
-      console.log(
-        `[ESPN] "${shortName}" → score=${score}, R${currentRound} thru ${holesThru} (${status})`
-      );
+    const roundScores = {};
+    (c.linescores ?? []).forEach((p) => {
+      if (p.displayValue && p.period >= 1 && p.period <= 4) {
+        roundScores[p.period] = parseRoundScore(p.displayValue);
+      }
+    });
+
+    if (statusInfo.currentRound > tournamentRound) {
+      tournamentRound = statusInfo.currentRound;
     }
+
+    allData.push({ shortName, score, roundScores, ...statusInfo });
   });
 
-  return map;
+  // Derive the cut line once R3 is underway.
+  // The worst 36-hole score among golfers actively playing R3+ is the cut line.
+  // Any R2 round-done golfer with a strictly higher score missed the cut.
+  if (tournamentRound >= 3) {
+    const inR3 = allData.filter((d) => d.currentRound >= 3);
+    if (inR3.length > 0) {
+      const r2Totals = inR3.map(
+        (d) => d.score - (d.roundScores[3] ?? 0) - (d.roundScores[4] ?? 0)
+      );
+      const cutLine = Math.max(...r2Totals);
+
+      allData.forEach((entry) => {
+        if (
+          entry.status === "round-done" &&
+          entry.currentRound <= 2 &&
+          entry.score > cutLine
+        ) {
+          entry.status = "cut";
+        }
+      });
+
+      const cutCount = allData.filter((d) => d.status === "cut").length;
+      console.log(
+        `[Cut] Derived cut line: ${cutLine >= 0 ? "+" : ""}${cutLine}. ${cutCount} golfers marked cut.`
+      );
+    }
+  }
+
+  // Compute worst non-cut round scores for the cut penalty.
+  const nonCut = allData.filter((d) => d.status !== "cut");
+  const r3Scores = nonCut
+    .filter((d) => d.roundScores[3] !== undefined)
+    .map((d) => d.roundScores[3]);
+  const r4Scores = nonCut
+    .filter((d) => d.roundScores[4] !== undefined)
+    .map((d) => d.roundScores[4]);
+
+  const r3Penalty = r3Scores.length > 0 ? Math.min(10, Math.max(...r3Scores)) : 0;
+  const r4Penalty = r4Scores.length > 0 ? Math.min(10, Math.max(...r4Scores)) : 0;
+
+  // Build the score map, applying cut penalties for cut golfers.
+  const map = new Map();
+  allData.forEach(({ shortName, score, holesThru, currentRound, status, teeTime }) => {
+    const key = normalizeName(shortName);
+    const finalScore = status === "cut" ? score + r3Penalty + r4Penalty : score;
+    map.set(key, { score: finalScore, holesThru, currentRound, status, teeTime });
+    console.log(
+      `[ESPN] "${shortName}" → score=${finalScore}, R${currentRound} thru ${holesThru} (${status})`
+    );
+  });
+
+  return { map, tournamentRound, r3Penalty, r4Penalty };
 }
 
 export async function getTournamentName() {
@@ -116,7 +193,8 @@ export async function syncLiveScoresToBucket() {
     if (!espnRes.ok) throw new Error(`ESPN fetch failed: ${espnRes.status}`);
 
     const espnData = await espnRes.json();
-    const scoreMap = buildScoreMap(espnData);
+    const { map: scoreMap, tournamentRound, r3Penalty, r4Penalty } = buildScoreMap(espnData);
+    const totalCutPenalty = r3Penalty + r4Penalty;
 
     const golfers = await getAllGolfers();
     console.log(`[Bucket] Found ${golfers.length} golfers`);
@@ -126,7 +204,8 @@ export async function syncLiveScoresToBucket() {
       const live = scoreMap.get(key);
 
       if (live) {
-        return {
+        // ESPN provided this golfer's data (including ESPN-reported cut golfers).
+        const update = {
           ...g,
           totalScore: live.score,
           holesThru: live.holesThru,
@@ -134,10 +213,34 @@ export async function syncLiveScoresToBucket() {
           status: live.status,
           teeTime: live.teeTime,
         };
-      } else {
-        console.warn(`[No match] "${g.golferName}" (key="${key}")`);
-        return g;
+        if (live.status === "cut") {
+          // Store the pre-penalty base score so future syncs can recalculate correctly.
+          update.cutBaseScore = live.score - totalCutPenalty;
+        }
+        return update;
       }
+
+      // Golfer not in ESPN data.
+      // If already marked cut, recalculate their penalized score with current round penalties.
+      if (g.status === "cut") {
+        const cutBase = g.cutBaseScore ?? g.totalScore ?? 0;
+        return { ...g, cutBaseScore: cutBase, totalScore: cutBase + totalCutPenalty };
+      }
+
+      // If tournament has moved past R2 and this golfer stopped after R2, they missed the cut.
+      const likelyCut =
+        tournamentRound >= 3 &&
+        g.status !== "pre" &&
+        (g.currentRound ?? 0) <= 2;
+
+      if (likelyCut) {
+        const cutBase = g.totalScore ?? 0;
+        console.warn(`[Cut] "${g.golferName}" → base=${cutBase}, penalty=${totalCutPenalty}`);
+        return { ...g, status: "cut", cutBaseScore: cutBase, totalScore: cutBase + totalCutPenalty };
+      }
+
+      console.warn(`[No match] "${g.golferName}" (key="${key}")`);
+      return g;
     });
 
     const byBucket = updated.reduce((acc, g) => {

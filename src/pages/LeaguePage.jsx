@@ -142,7 +142,14 @@ export default function LeaguePage() {
                   {(team.golfers || []).map((g) => (
                     <div key={g.golferId} className="bb-team-golfer-line">
                       <span className="bb-team-golfer-spacer"></span>
-                      <span className="bb-team-golfer-name">{g.golferName}</span>
+                      <span className="bb-team-golfer-name">
+                        {g.golferName}
+                        {g.status === "cut" && (
+                          <span style={{ marginLeft: "0.35rem", fontSize: "0.68rem", color: "#dc2626", fontWeight: 700 }}>
+                            CUT
+                          </span>
+                        )}
+                      </span>
                       <span className="bb-team-golfer-thru">{formatThru(g)}</span>
                       <span className="bb-team-golfer-score">{formatScore(g.totalScore)}</span>
                     </div>

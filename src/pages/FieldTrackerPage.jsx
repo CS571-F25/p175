@@ -158,6 +158,11 @@ export default function FieldTrackerPage() {
                 <span className="bb-col-pos">{g.posLabel}</span>
                 <span className="bb-col-name bb-team-name">
                   {g.golferName}
+                  {g.status === "cut" && (
+                    <span style={{ marginLeft: "0.4rem", fontSize: "0.72rem", color: "#dc2626", fontWeight: 700 }}>
+                      CUT
+                    </span>
+                  )}
                   <span style={{ marginLeft: "0.5rem", fontSize: "0.8rem", color: "#6b7280" }}>
                     {g.country}
                   </span>
