@@ -50,9 +50,9 @@ export async function createDraftForLeague(leagueId) {
   const numberOfTeams = teams.length;
 
   // randomize team order (by teamId)
-  const teamOrder = [...teams].map((t) => t.teamId);
+ const teamOrder = [...teams].map((t) => t.teamId);
   for (let i = teamOrder.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
     [teamOrder[i], teamOrder[j]] = [teamOrder[j], teamOrder[i]];
   }
 
