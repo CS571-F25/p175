@@ -14,6 +14,7 @@ export default function LeaguePage() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [isDraftComplete, setIsDraftComplete] = useState(false);
+  const [noDraft, setNoDraft] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -21,6 +22,7 @@ export default function LeaguePage() {
         setLoading(true);
         setErrorMsg("");
         setIsDraftComplete(false);
+        setNoDraft(false);
 
         // 1. Get league info
         const league = await getLeagueById(leagueId);
@@ -64,9 +66,16 @@ export default function LeaguePage() {
 
         setTeams(teamsWithLiveScores);
 
-        // 6. Check if the draft is complete
-        const draft = await getDraftForLeague(league.leagueId);
-        setIsDraftComplete(!!draft && draft.inProgress === false);
+        // 6. Check if the draft is complete — isolated so it can't crash the leaderboard
+        let draft = null;
+        try {
+          draft = await getDraftForLeague(league.leagueId);
+        } catch {
+          // bucket may not exist yet if no draft has been created
+        }
+        const complete = !!draft && draft.inProgress === false;
+        setIsDraftComplete(complete);
+        setNoDraft(!complete);
       } catch (err) {
         console.error(err);
         setErrorMsg(err.message || "Could not load leaderboard.");
@@ -97,7 +106,6 @@ export default function LeaguePage() {
           <span className="bb-col-thru">Thru</span>
           <span className="bb-col-score">Score</span>
         </div>
-      
 
         {errorMsg && !loading && (
           <div className="bb-leaderboard-error">{errorMsg}</div>
@@ -110,8 +118,15 @@ export default function LeaguePage() {
           </div>
         )}
 
+        {!loading && !errorMsg && noDraft && (
+          <div className="bb-leaderboard-error">
+            You need to draft a team first dumbass
+          </div>
+        )}
+
         {!loading &&
           !errorMsg &&
+          !noDraft &&
           [...teams]
             .sort((a, b) => (a.totalScore ?? 0) - (b.totalScore ?? 0))
             .map((team, idx) => {
