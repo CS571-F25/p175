@@ -50,9 +50,11 @@ export async function createDraftForLeague(leagueId) {
   const numberOfTeams = teams.length;
 
   // randomize team order (by teamId)
-  const teamOrder = [...teams]
-    .sort(() => Math.random() - 0.5)
-    .map((t) => t.teamId);
+  const teamOrder = [...teams].map((t) => t.teamId);
+  for (let i = teamOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [teamOrder[i], teamOrder[j]] = [teamOrder[j], teamOrder[i]];
+  }
 
   const picksPerTeam = 6;
   const currentPickNumber = 1;
