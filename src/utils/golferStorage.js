@@ -199,6 +199,14 @@ export async function syncLiveScoresToBucket() {
     const golfers = await getAllGolfers();
     console.log(`[Bucket] Found ${golfers.length} golfers`);
 
+    // Log any ESPN golfers not found in the bucket
+    const bucketKeys = new Set(golfers.map((g) => normalizeName(g.golferName)));
+    scoreMap.forEach((_, espnKey) => {
+      if (!bucketKeys.has(espnKey)) {
+        console.warn(`[Missing from bucket] ESPN key: "${espnKey}"`);
+      }
+    });
+
     const updated = golfers.map((g) => {
       const key = normalizeName(g.golferName);
       const live = scoreMap.get(key);

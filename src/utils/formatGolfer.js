@@ -17,11 +17,15 @@ export function formatThru(golfer) {
 }
 
 function formatTeeTime(raw) {
-  const date = new Date(raw);
+  // ESPN always labels tee times as PDT/PST regardless of venue timezone.
+  // Replace with the actual venue offset — US Open (Shinnecock Hills, NY) is EDT = GMT-0400.
+  const corrected = raw
+    .replace(/\bPDT\b/g, "GMT-0400")
+    .replace(/\bPST\b/g, "GMT-0500");
+  const date = new Date(corrected);
   if (isNaN(date.getTime())) return raw;
 
   return date.toLocaleTimeString("en-US", {
-    timeZone: "America/Chicago",
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
