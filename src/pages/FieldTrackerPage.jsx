@@ -165,6 +165,11 @@ export default function FieldTrackerPage() {
                         CUT
                       </span>
                     )}
+                    {g.status === "wd" && (
+                      <span style={{ marginLeft: "0.4rem", fontSize: "0.72rem", color: "#7c3aed", fontWeight: 700 }}>
+                        WD
+                      </span>
+                    )}
                     <span style={{ marginLeft: "0.5rem", fontSize: "0.8rem", color: "#6b7280" }}>
                       {g.country}
                     </span>

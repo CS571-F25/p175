@@ -8,8 +8,9 @@ export function formatThru(golfer) {
   const { status, holesThru, teeTime } = golfer;
 
   if (status === "finished") return "F";
-  if (status === "round-done") return "F";
+  if (status === "round-done") return teeTime ? formatTeeTime(teeTime) : "F";
   if (status === "cut") return "—";
+  if (status === "wd") return "—";
   if (status === "pre") return teeTime ? formatTeeTime(teeTime) : "—";
   if (status === "live") return holesThru > 0 ? `thru ${holesThru}` : "—";
 

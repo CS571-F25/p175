@@ -229,6 +229,11 @@ export default function MyTeamPage() {
                         CUT
                       </span>
                     )}
+                    {g.status === "wd" && (
+                      <span style={{ marginLeft: "0.4rem", fontSize: "0.72rem", color: "#7c3aed", fontWeight: 700 }}>
+                        WD
+                      </span>
+                    )}
                     <span
                       style={{
                         marginLeft: "0.5rem",

@@ -33,8 +33,9 @@ function parseRoundScore(displayValue) {
  *   cut         → missed the cut
  */
 function getGolferStatus(competitor, totalRoundsInEvent = 4) {
-  // ESPN marks cut golfers with an explicit status — check before linescore logic.
   const espnStatusName = competitor.status?.type?.name ?? "";
+
+  // ESPN marks cut golfers with an explicit status — check before linescore logic.
   if (espnStatusName.toUpperCase().includes("CUT")) {
     const periods = competitor.linescores ?? [];
     const lastRound = periods.reduce(
@@ -42,6 +43,21 @@ function getGolferStatus(competitor, totalRoundsInEvent = 4) {
       2
     );
     return { holesThru: 18, currentRound: lastRound, status: "cut", teeTime: null };
+  }
+
+  // Detect withdrawals — find the last round/holes they actually played.
+  if (espnStatusName.toUpperCase().includes("WD") || espnStatusName.toUpperCase().includes("WITHDRAWN")) {
+    const periods = competitor.linescores ?? [];
+    let lastRound = 1;
+    let lastHoles = 0;
+    for (const period of periods) {
+      const holes = period.linescores?.length ?? 0;
+      if (holes > 0) {
+        lastRound = period.period;
+        lastHoles = holes;
+      }
+    }
+    return { holesThru: lastHoles, currentRound: lastRound, status: "wd", teeTime: null };
   }
 
   const periods = competitor.linescores ?? [];
@@ -87,6 +103,13 @@ function extractTeeTime(period) {
   // Tee time is the last stat entry — it's the only one with just displayValue, no value
   const teeStat = stats.find((s) => s.value === undefined && s.displayValue);
   return teeStat?.displayValue ?? null;
+}
+
+function computeWDPenalty(penaltyFromRound, r1Penalty, r2Penalty, r3Penalty, r4Penalty) {
+  const all = [r1Penalty, r2Penalty, r3Penalty, r4Penalty];
+  let total = 0;
+  for (let r = penaltyFromRound; r <= 4; r++) total += all[r - 1];
+  return total;
 }
 
 function buildScoreMap(espnData) {
@@ -150,30 +173,41 @@ function buildScoreMap(espnData) {
     }
   }
 
-  // Compute worst non-cut round scores for the cut penalty.
-  const nonCut = allData.filter((d) => d.status !== "cut");
-  const r3Scores = nonCut
-    .filter((d) => d.roundScores[3] !== undefined)
-    .map((d) => d.roundScores[3]);
-  const r4Scores = nonCut
-    .filter((d) => d.roundScores[4] !== undefined)
-    .map((d) => d.roundScores[4]);
+  // Compute worst non-cut, non-WD round scores for round penalties.
+  const eligible = allData.filter((d) => d.status !== "cut" && d.status !== "wd");
+  const r1Scores = eligible.filter((d) => d.roundScores[1] !== undefined).map((d) => d.roundScores[1]);
+  const r2Scores = eligible.filter((d) => d.roundScores[2] !== undefined).map((d) => d.roundScores[2]);
+  const r3Scores = eligible.filter((d) => d.roundScores[3] !== undefined).map((d) => d.roundScores[3]);
+  const r4Scores = eligible.filter((d) => d.roundScores[4] !== undefined).map((d) => d.roundScores[4]);
 
+  const r1Penalty = r1Scores.length > 0 ? Math.min(10, Math.max(...r1Scores)) : 0;
+  const r2Penalty = r2Scores.length > 0 ? Math.min(10, Math.max(...r2Scores)) : 0;
   const r3Penalty = r3Scores.length > 0 ? Math.min(10, Math.max(...r3Scores)) : 0;
   const r4Penalty = r4Scores.length > 0 ? Math.min(10, Math.max(...r4Scores)) : 0;
 
-  // Build the score map, applying cut penalties for cut golfers.
+  // Build the score map, applying cut/WD penalties.
   const map = new Map();
   allData.forEach(({ shortName, score, roundScores, holesThru, currentRound, status, teeTime }) => {
     const key = normalizeName(shortName);
-    const finalScore = status === "cut" ? score + r3Penalty + r4Penalty : score;
-    map.set(key, { score: finalScore, holesThru, currentRound, status, teeTime, roundScores });
+    let finalScore = score;
+    let wdPenaltyFromRound = null;
+    if (status === "cut") {
+      finalScore = score + r3Penalty + r4Penalty;
+    } else if (status === "wd") {
+      // Keep any partial score as their base; only penalize rounds they missed entirely.
+      // If holesThru > 0 they played (partial or full) that round — penalty starts next round.
+      // If holesThru === 0 they never teed off — penalty starts from currentRound.
+      const penaltyFrom = holesThru > 0 ? currentRound + 1 : currentRound;
+      wdPenaltyFromRound = penaltyFrom;
+      finalScore = score + computeWDPenalty(penaltyFrom, r1Penalty, r2Penalty, r3Penalty, r4Penalty);
+    }
+    map.set(key, { score: finalScore, holesThru, currentRound, status, teeTime, roundScores, wdPenaltyFromRound });
     console.log(
       `[ESPN] "${shortName}" → score=${finalScore}, R${currentRound} thru ${holesThru} (${status})`
     );
   });
 
-  return { map, tournamentRound, r3Penalty, r4Penalty };
+  return { map, tournamentRound, r1Penalty, r2Penalty, r3Penalty, r4Penalty };
 }
 
 export async function getTournamentName() {
@@ -193,7 +227,7 @@ export async function syncLiveScoresToBucket() {
     if (!espnRes.ok) throw new Error(`ESPN fetch failed: ${espnRes.status}`);
 
     const espnData = await espnRes.json();
-    const { map: scoreMap, tournamentRound, r3Penalty, r4Penalty } = buildScoreMap(espnData);
+    const { map: scoreMap, tournamentRound, r1Penalty, r2Penalty, r3Penalty, r4Penalty } = buildScoreMap(espnData);
     const totalCutPenalty = r3Penalty + r4Penalty;
 
     const golfers = await getAllGolfers();
@@ -212,6 +246,28 @@ export async function syncLiveScoresToBucket() {
       const live = scoreMap.get(key);
 
       if (live) {
+        // If ESPN still shows the golfer as live in a previous round, the tournament passed
+        // them by — they withdrew mid-round and ESPN just froze their state.
+        if (live.status === "live" && live.currentRound < tournamentRound) {
+          const wdBase = live.score;
+          const holesPlayed = live.holesThru ?? 0;
+          const wdRound = live.currentRound ?? 1;
+          const penaltyFrom = holesPlayed > 0 ? wdRound + 1 : wdRound;
+          const wdPenalty = computeWDPenalty(penaltyFrom, r1Penalty, r2Penalty, r3Penalty, r4Penalty);
+          console.warn(`[WD] "${g.golferName}" → frozen live R${wdRound} thru ${holesPlayed}, tournament=R${tournamentRound}, penalty=+${wdPenalty}`);
+          return {
+            ...g,
+            status: "wd",
+            totalScore: wdBase + wdPenalty,
+            wdBaseScore: wdBase,
+            wdPenaltyFromRound: penaltyFrom,
+            holesThru: live.holesThru,
+            currentRound: live.currentRound,
+            teeTime: null,
+            roundScores: live.roundScores ?? {},
+          };
+        }
+
         // ESPN provided this golfer's data (including ESPN-reported cut golfers).
         const update = {
           ...g,
@@ -226,6 +282,12 @@ export async function syncLiveScoresToBucket() {
           // Store the pre-penalty base score so future syncs can recalculate correctly.
           update.cutBaseScore = live.score - totalCutPenalty;
         }
+        if (live.status === "wd") {
+          const penaltyFrom = live.wdPenaltyFromRound ?? 1;
+          const wdPenalty = computeWDPenalty(penaltyFrom, r1Penalty, r2Penalty, r3Penalty, r4Penalty);
+          update.wdBaseScore = live.score - wdPenalty;
+          update.wdPenaltyFromRound = penaltyFrom;
+        }
         return update;
       }
 
@@ -236,10 +298,36 @@ export async function syncLiveScoresToBucket() {
         return { ...g, cutBaseScore: cutBase, totalScore: cutBase + totalCutPenalty };
       }
 
+      // If already marked WD, recalculate with updated round penalties.
+      if (g.status === "wd") {
+        const wdBase = g.wdBaseScore ?? g.totalScore ?? 0;
+        const penaltyFrom = g.wdPenaltyFromRound ?? 1;
+        const wdPenalty = computeWDPenalty(penaltyFrom, r1Penalty, r2Penalty, r3Penalty, r4Penalty);
+        return { ...g, wdBaseScore: wdBase, wdPenaltyFromRound: penaltyFrom, totalScore: wdBase + wdPenalty };
+      }
+
+      // If a golfer was mid-round (live) but the tournament has moved past their round,
+      // they dropped from the ESPN feed — treat as WD.
+      const likelyWD =
+        g.status === "live" &&
+        (g.currentRound ?? 0) < tournamentRound;
+
+      if (likelyWD) {
+        const wdBase = g.totalScore ?? 0;
+        const holesPlayed = g.holesThru ?? 0;
+        const wdRound = g.currentRound ?? 1;
+        // Keep partial score; penalize only the rounds they missed entirely.
+        const penaltyFrom = holesPlayed > 0 ? wdRound + 1 : wdRound;
+        const wdPenalty = computeWDPenalty(penaltyFrom, r1Penalty, r2Penalty, r3Penalty, r4Penalty);
+        console.warn(`[WD] "${g.golferName}" → base=${wdBase}, penaltyFrom=R${penaltyFrom}, penalty=${wdPenalty}`);
+        return { ...g, status: "wd", wdBaseScore: wdBase, wdPenaltyFromRound: penaltyFrom, totalScore: wdBase + wdPenalty };
+      }
+
       // If tournament has moved past R2 and this golfer stopped after R2, they missed the cut.
       const likelyCut =
         tournamentRound >= 3 &&
         g.status !== "pre" &&
+        g.status !== "wd" &&
         (g.currentRound ?? 0) <= 2;
 
       if (likelyCut) {

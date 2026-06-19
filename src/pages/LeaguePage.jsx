@@ -165,6 +165,11 @@ export default function LeaguePage() {
                               CUT
                             </span>
                           )}
+                          {g.status === "wd" && (
+                            <span style={{ marginLeft: "0.35rem", fontSize: "0.68rem", color: "#7c3aed", fontWeight: 700 }}>
+                              WD
+                            </span>
+                          )}
                         </div>
                       </span>
                       <span className="bb-team-golfer-thru">{formatThru(g)}</span>
