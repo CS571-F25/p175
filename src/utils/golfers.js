@@ -9,9 +9,10 @@ export const COMMON_HEADERS = {
     "bid_43173fda9267d4ebd9d6283b9e05aa9526dade986fa45ba6c57332cdbdb92315",
 };
 
+const ACTIVE_TOURNAMENT_ID = "401811955";
+
 /**
- * Fetch all golfers from the bb-golfers bucket.
- * We flatten that into a simple array of golfer objects.
+ * Fetch all golfers from the bb-golfers bucket, filtered to the active tournament.
  */
 export async function getAllGolfers() {
   const res = await fetch(BUCKET_GOLFERS_URL, {
@@ -30,12 +31,11 @@ export async function getAllGolfers() {
 
   Object.entries(results).forEach(([bucketId, value]) => {
     if (Array.isArray(value)) {
-      // You likely POSTed one big array of 50 golfers under a single id
       value.forEach((g) => golfers.push({ ...g, bucketId }));
     } else if (value && typeof value === "object") {
       golfers.push({ ...value, bucketId });
     }
   });
 
-  return golfers;
+  return golfers.filter((g) => g.tournamentId === ACTIVE_TOURNAMENT_ID);
 }

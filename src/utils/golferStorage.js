@@ -1,7 +1,7 @@
 import { getAllGolfers, BUCKET_GOLFERS_URL, COMMON_HEADERS } from "./golfers";
 
 const ESPN_SCOREBOARD_URL =
-  "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811953";
+  "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811955";
 
 function normalizeName(name = "") {
   return name
@@ -124,8 +124,8 @@ function buildScoreMap(espnData) {
   let tournamentRound = 1;
 
   competitors.forEach((c) => {
-    const shortName = c.athlete?.shortName;
-    if (!shortName) return;
+    const displayName = c.athlete?.displayName;
+    if (!displayName) return;
 
     const raw = c.score ?? "E";
     const score = raw === "E" ? 0 : parseInt(raw, 10);
@@ -142,7 +142,7 @@ function buildScoreMap(espnData) {
       tournamentRound = statusInfo.currentRound;
     }
 
-    allData.push({ shortName, score, roundScores, ...statusInfo });
+    allData.push({ shortName: displayName, score, roundScores, ...statusInfo });
   });
 
   // Derive the cut line once R3 is underway.
@@ -349,7 +349,7 @@ export async function syncLiveScoresToBucket() {
     try {
       await Promise.all(
         Object.entries(byBucket).map(async ([bucketId, golferGroup]) => {
-          const payload = golferGroup.map(({ bucketId, ...rest }) => rest);
+          const payload = golferGroup.map((g) => { const copy = { ...g }; delete copy.bucketId; return copy; });
           const url = `${BUCKET_GOLFERS_URL}/${bucketId}`;
 
           const res = await fetch(url, {
