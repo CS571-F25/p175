@@ -124,8 +124,8 @@ function buildScoreMap(espnData) {
   let tournamentRound = 1;
 
   competitors.forEach((c) => {
-    const displayName = c.athlete?.displayName;
-    if (!displayName) return;
+    const shortName = c.athlete?.shortName;
+    if (!shortName) return;
 
     const raw = c.score ?? "E";
     const score = raw === "E" ? 0 : parseInt(raw, 10);
@@ -142,7 +142,7 @@ function buildScoreMap(espnData) {
       tournamentRound = statusInfo.currentRound;
     }
 
-    allData.push({ shortName: displayName, score, roundScores, ...statusInfo });
+    allData.push({ shortName, score, roundScores, ...statusInfo });
   });
 
   // Derive the cut line once R3 is underway.
