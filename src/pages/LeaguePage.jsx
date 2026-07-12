@@ -39,7 +39,7 @@ export default function LeaguePage() {
           golfers.map((g) => [String(g.golferId), g])
         );
 
-        // 5. Recompute each team's live total score from best 5 golfers
+        // 5. Recompute each team's live total score from best 4 golfers
         const teamsWithLiveScores = fetchedTeams.map((team) => {
           const golferIds = Array.isArray(team.golferIds) ? team.golferIds : [];
 
@@ -54,7 +54,7 @@ export default function LeaguePage() {
             });
 
           const liveTotalScore = teamGolfers
-            .slice(0, 5)
+            .slice(0, 4)
             .reduce((sum, g) => sum + (typeof g.totalScore === "number" ? g.totalScore : 0), 0);
 
           return {

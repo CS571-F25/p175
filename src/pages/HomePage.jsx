@@ -121,8 +121,8 @@ export default function HomePage() {
             <div className="p-3 rounded-4 border bg-light text-start">
               <h5 className="mb-2">How scoring works</h5>
               <p className="mb-0 text-muted">
-                Each team drafts six golfers, but only your best five scores count
-                toward your total. The sixth score is a drop score and won&apos;t be
+                Each team drafts six golfers, but only your best four scores count
+                toward your total. The two worst scores are drops and won&apos;t be
                 included in your team&apos;s leaderboard number.
               </p>
             </div>

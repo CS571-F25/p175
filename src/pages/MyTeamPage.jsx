@@ -124,7 +124,7 @@ export default function MyTeamPage() {
   });
 }, [myTeam, allGolfers]);
 
-  // ---- total team score (best five golfers only) ----
+  // ---- total team score (best four golfers only) ----
   const totalTeamScore = useMemo(() => {
     if (!myGolfersSorted.length) {
       return myTeam && typeof myTeam.totalScore === "number"
@@ -132,7 +132,7 @@ export default function MyTeamPage() {
         : 0;
     }
 
-    return myGolfersSorted.slice(0, 5).reduce((sum, g) => {
+    return myGolfersSorted.slice(0, 4).reduce((sum, g) => {
       if (typeof g.totalScore === "number") {
         return sum + g.totalScore;
       }
@@ -184,7 +184,7 @@ export default function MyTeamPage() {
             <span style={{ color: "#2563eb" }}>{totalTeamScore}</span>
           </p>
           <p style={{ margin: 0, color: "#6b7280", fontSize: "0.65rem" }}>
-            *Only your best five golfers count; any dropped score is highlighted in red.*
+            *Only your best four golfers count; any dropped scores are highlighted in red.*
           </p>
         </div>
       )}
@@ -215,7 +215,7 @@ export default function MyTeamPage() {
             const rowClassName = [
               "bb-leaderboard-row",
               "bb-with-thru",
-              idx < 5 ? "bb-row-top-five" : "bb-row-dropped",
+              idx < 4 ? "bb-row-top-five" : "bb-row-dropped",
             ].join(" ");
 
             return (
