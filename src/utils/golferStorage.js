@@ -3,6 +3,8 @@ import { getAllGolfers, BUCKET_GOLFERS_URL, COMMON_HEADERS } from "./golfers";
 const ESPN_SCOREBOARD_URL =
   "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811957";
 
+const ACTIVE_ESPN_EVENT_ID = "401811957";
+
 function normalizeName(name = "") {
   return name
     .normalize("NFD")
@@ -213,11 +215,13 @@ function buildScoreMap(espnData) {
 export async function getTournamentName() {
   try {
     const res = await fetch(ESPN_SCOREBOARD_URL);
-    if (!res.ok) return "Tournament";
+    if (!res.ok) return "The Open";
     const data = await res.json();
-    return data?.events?.[0]?.name ?? "Tournament";
+    const eventId = data?.events?.[0]?.id;
+    if (eventId !== ACTIVE_ESPN_EVENT_ID) return "The Open";
+    return data?.events?.[0]?.name ?? "The Open";
   } catch {
-    return "Tournament";
+    return "The Open";
   }
 }
 
@@ -227,6 +231,13 @@ export async function syncLiveScoresToBucket() {
     if (!espnRes.ok) throw new Error(`ESPN fetch failed: ${espnRes.status}`);
 
     const espnData = await espnRes.json();
+
+    const espnEventId = espnData?.events?.[0]?.id;
+    if (espnEventId !== ACTIVE_ESPN_EVENT_ID) {
+      console.warn(`[ESPN] Expected event ${ACTIVE_ESPN_EVENT_ID} but got ${espnEventId}. Tournament not live yet.`);
+      return getAllGolfers();
+    }
+
     const { map: scoreMap, tournamentRound, r1Penalty, r2Penalty, r3Penalty, r4Penalty } = buildScoreMap(espnData);
     const totalCutPenalty = r3Penalty + r4Penalty;
 

@@ -36,7 +36,9 @@ export default function HomePage() {
   useEffect(() => {
     if (!user) return;
     getLeaguesForUser(user.id)
-      .then(setUserLeagues)
+      .then((leagues) =>
+        setUserLeagues([...leagues].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
+      )
       .catch(() => {});
   }, [user]);
 
