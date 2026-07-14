@@ -48,7 +48,7 @@ export default function HomePage() {
         <img
           src={logo}
           alt="BirdieBoard logo"
-          height="160"
+          style={{ maxHeight: "160px", maxWidth: "100%", width: "auto" }}
           className="mb-4"
         />
 
