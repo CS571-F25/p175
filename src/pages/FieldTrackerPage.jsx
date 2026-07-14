@@ -5,7 +5,7 @@ import { Spinner } from "react-bootstrap";
 import LeagueNavbar from "../components/LeagueNavbar";
 import { getLeagueById, getTeamsForLeague } from "../utils/leagueAndTeamStorage";
 import { getDraftForLeague } from "../utils/draftStorage";
-import { syncLiveScoresToBucket, getTournamentName } from "../utils/golferStorage";
+import { syncLiveScoresToBucket } from "../utils/golferStorage";
 import { formatThru, formatScore } from "../utils/formatGolfer";
 import RoundScores from "../components/RoundScores";
 
@@ -46,20 +46,21 @@ export default function FieldTrackerPage() {
         setLoading(true);
         setErrorMsg("");
 
-        const [league, golfers, leagueTeams, tName, draftData] = await Promise.all([
-          getLeagueById(leagueId),
-          syncLiveScoresToBucket(),
+        const league = await getLeagueById(leagueId);
+        if (cancelled) return;
+
+        const [golfers, leagueTeams, draftData] = await Promise.all([
+          syncLiveScoresToBucket(league.tournamentId),
           getTeamsForLeague(leagueId),
-          getTournamentName(),
           getDraftForLeague(leagueId).catch(() => null),
         ]);
 
         if (cancelled) return;
 
         setLeagueName(league.leagueName || "League");
+        setTournamentName(league.tournamentName || league.leagueName || "");
         setAllGolfers(golfers);
         setTeams(leagueTeams);
-        setTournamentName(tName);
         setDraft(draftData);
       } catch (err) {
         console.error(err);

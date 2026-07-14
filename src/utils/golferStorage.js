@@ -225,8 +225,13 @@ export async function getTournamentName() {
   }
 }
 
-export async function syncLiveScoresToBucket() {
+export async function syncLiveScoresToBucket(tournamentId = ACTIVE_ESPN_EVENT_ID) {
   try {
+    // For past tournaments return stored bucket data — no live ESPN sync needed.
+    if (tournamentId !== ACTIVE_ESPN_EVENT_ID) {
+      return getAllGolfers(tournamentId);
+    }
+
     const espnRes = await fetch(ESPN_SCOREBOARD_URL);
     if (!espnRes.ok) throw new Error(`ESPN fetch failed: ${espnRes.status}`);
 
@@ -235,13 +240,13 @@ export async function syncLiveScoresToBucket() {
     const espnEventId = espnData?.events?.[0]?.id;
     if (espnEventId !== ACTIVE_ESPN_EVENT_ID) {
       console.warn(`[ESPN] Expected event ${ACTIVE_ESPN_EVENT_ID} but got ${espnEventId}. Tournament not live yet.`);
-      return getAllGolfers();
+      return getAllGolfers(tournamentId);
     }
 
     const { map: scoreMap, tournamentRound, r1Penalty, r2Penalty, r3Penalty, r4Penalty } = buildScoreMap(espnData);
     const totalCutPenalty = r3Penalty + r4Penalty;
 
-    const golfers = await getAllGolfers();
+    const golfers = await getAllGolfers(tournamentId);
     console.log(`[Bucket] Found ${golfers.length} golfers`);
 
     // Log any ESPN golfers not found in the bucket
@@ -361,7 +366,7 @@ export async function syncLiveScoresToBucket() {
       await Promise.all(
         Object.entries(byBucket).map(async ([bucketId, golferGroup]) => {
           const payload = golferGroup.map((g) => { const copy = { ...g }; delete copy.bucketId; return copy; });
-          const url = `${BUCKET_GOLFERS_URL}/${bucketId}`;
+          const url = `${BUCKET_GOLFERS_URL}?id=${encodeURIComponent(bucketId)}`;
 
           const res = await fetch(url, {
             method: "PUT",
@@ -383,6 +388,6 @@ export async function syncLiveScoresToBucket() {
     return updated;
   } catch (err) {
     console.warn("Live score sync failed, falling back to bucket data:", err.message);
-    return getAllGolfers();
+    return getAllGolfers(tournamentId);
   }
 }

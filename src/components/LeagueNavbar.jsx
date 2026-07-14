@@ -1,61 +1,66 @@
-// Subnav present on league pages
-// Navigate between leaderboard, my team, and draftboard
-
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { getLeaguesForUser } from "../utils/leagueAndTeamStorage";
+
+const TABS = [
+  { key: "leaderboard", label: "Leaderboard", path: "" },
+  { key: "my-team",     label: "My Team",     path: "/my-team" },
+  { key: "draft",       label: "Draftboard",  path: "/draft" },
+  { key: "field-tracker", label: "Field Tracker", path: "/field-tracker" },
+];
 
 export default function LeagueNavbar({ active = "leaderboard" }) {
   const navigate = useNavigate();
   const { leagueId } = useParams();
+  const { user } = useAuth();
+
+  const [leagues, setLeagues] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getLeaguesForUser(user.id)
+      .then((all) =>
+        setLeagues([...all].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
+      )
+      .catch(() => {});
+  }, [user]);
+
+  function handlePoolChange(e) {
+    const newId = e.target.value;
+    const tab = TABS.find((t) => t.key === active);
+    navigate(`/league/${newId}${tab?.path ?? ""}`);
+  }
 
   function goTo(tab) {
-    if (tab === "leaderboard") {
-      navigate(`/league/${leagueId}`);
-    } else if (tab === "my-team") {
-      navigate(`/league/${leagueId}/my-team`);
-    } else if (tab === "draft") {
-      navigate(`/league/${leagueId}/draft`);
-    } else if (tab === "field-tracker") {
-      navigate(`/league/${leagueId}/field-tracker`);
-    }
+    navigate(`/league/${leagueId}${tab.path}`);
   }
 
   return (
     <div className="bb-subnav">
-      <button
-        className={`bb-subnav-link ${
-          active === "leaderboard" ? "bb-subnav-link-active" : ""
-        }`}
-        onClick={() => goTo("leaderboard")}
+      <select
+        className="bb-subnav-pool-select"
+        value={leagueId}
+        onChange={handlePoolChange}
       >
-        Leaderboard
-      </button>
+        {leagues.map((l) => (
+          <option key={l.leagueId} value={l.leagueId}>
+            {l.leagueName}
+          </option>
+        ))}
+      </select>
 
-      <button
-        className={`bb-subnav-link ${
-          active === "my-team" ? "bb-subnav-link-active" : ""
-        }`}
-        onClick={() => goTo("my-team")}
-      >
-        My Team
-      </button>
-
-      <button
-        className={`bb-subnav-link ${
-          active === "draft" ? "bb-subnav-link-active" : ""
-        }`}
-        onClick={() => goTo("draft")}
-      >
-        Draft
-      </button>
-
-      <button
-        className={`bb-subnav-link ${
-          active === "field-tracker" ? "bb-subnav-link-active" : ""
-        }`}
-        onClick={() => goTo("field-tracker")}
-      >
-        Field Tracker
-      </button>
+      <div className="bb-subnav-tabs">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            className={`bb-subnav-link ${active === tab.key ? "bb-subnav-link-active" : ""}`}
+            onClick={() => goTo(tab)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

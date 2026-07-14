@@ -32,7 +32,7 @@ export default function LeaguePage() {
         const fetchedTeams = await getTeamsForLeague(league.leagueId);
 
         // 3. Get live golfers
-        const golfers = await syncLiveScoresToBucket();
+        const golfers = await syncLiveScoresToBucket(league.tournamentId);
 
         // 4. Build golfer lookup by ID
         const golferMap = new Map(
@@ -120,7 +120,7 @@ export default function LeaguePage() {
 
         {!loading && !errorMsg && noDraft && (
           <div className="bb-leaderboard-error">
-            You need to draft a team first dumbass
+            The draft must be completed before scores appear here. Head to the Draftboard to get started.
           </div>
         )}
 

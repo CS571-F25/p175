@@ -9,12 +9,12 @@ export const COMMON_HEADERS = {
     "bid_43173fda9267d4ebd9d6283b9e05aa9526dade986fa45ba6c57332cdbdb92315",
 };
 
-const ACTIVE_TOURNAMENT_ID = "401811957";
+export const ACTIVE_TOURNAMENT_ID = "401811957";
 
 /**
  * Fetch all golfers from the bb-golfers bucket, filtered to the active tournament.
  */
-export async function getAllGolfers() {
+export async function getAllGolfers(tournamentId = ACTIVE_TOURNAMENT_ID) {
   const res = await fetch(BUCKET_GOLFERS_URL, {
     method: "GET",
     headers: COMMON_HEADERS,
@@ -37,5 +37,5 @@ export async function getAllGolfers() {
     }
   });
 
-  return golfers.filter((g) => g.tournamentId === ACTIVE_TOURNAMENT_ID);
+  return golfers.filter((g) => g.tournamentId === tournamentId);
 }

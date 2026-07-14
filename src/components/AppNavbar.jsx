@@ -20,7 +20,9 @@ export default function AppNavbar() {
       return;
     }
     getLeaguesForUser(user.id)
-      .then(setUserLeagues)
+      .then((leagues) =>
+        setUserLeagues([...leagues].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
+      )
       .catch(() => {});
   }, [user]);
 
@@ -49,27 +51,15 @@ export default function AppNavbar() {
             menuVariant="dark"
           >
             {userLeagues.length === 0 ? (
-              <NavDropdown.Item disabled>No leagues yet</NavDropdown.Item>
+              <NavDropdown.Item disabled>No pools yet</NavDropdown.Item>
             ) : (
-              userLeagues.map((league, i) => (
-                <span key={league.leagueId}>
-                  {i > 0 && <NavDropdown.Divider />}
-                  {userLeagues.length > 1 && (
-                    <NavDropdown.Header>{league.leagueName}</NavDropdown.Header>
-                  )}
-                  <NavDropdown.Item onClick={() => navigate(`/league/${league.leagueId}`)}>
-                    Leaderboard
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigate(`/league/${league.leagueId}/my-team`)}>
-                    My Team
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigate(`/league/${league.leagueId}/draft`)}>
-                    Draftboard
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigate(`/league/${league.leagueId}/field-tracker`)}>
-                    Field Tracker
-                  </NavDropdown.Item>
-                </span>
+              userLeagues.map((league) => (
+                <NavDropdown.Item
+                  key={league.leagueId}
+                  onClick={() => navigate(`/league/${league.leagueId}`)}
+                >
+                  {league.leagueName}
+                </NavDropdown.Item>
               ))
             )}
 

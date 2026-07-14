@@ -3,6 +3,8 @@
 import { getUserByUsername, getAllUsers } from "./userStorage";
 import { hashPassword } from "./hashPassword";
 import { addLeagueAndTeamToUser } from "./userStorage";
+import { ACTIVE_TOURNAMENT_ID } from "./golfers";
+import { getTournamentName } from "./golferStorage";
 
 const BUCKET_LEAGUES_URL = "https://cs571api.cs.wisc.edu/rest/f25/bucket/bb-leagues";
 const BUCKET_TEAMS_URL   = "https://cs571api.cs.wisc.edu/rest/f25/bucket/bb-teams";
@@ -183,6 +185,7 @@ export async function createLeague({ leagueName, leaguePassword, ownerUsername }
   const leaguePasswordHash = await hashPassword(leaguePassword);
 
   // 3. Build the league object
+  const tournamentName = await getTournamentName().catch(() => "");
   const newLeague = {
     leagueId: crypto.randomUUID(),
     ownerId: userId,
@@ -190,6 +193,8 @@ export async function createLeague({ leagueName, leaguePassword, ownerUsername }
     leaguePassword: leaguePasswordHash,
     userIds: [userId],
     createdAt: new Date().toISOString(),
+    tournamentId: ACTIVE_TOURNAMENT_ID,
+    tournamentName,
   };
 
   // 4. Save league to Bucket

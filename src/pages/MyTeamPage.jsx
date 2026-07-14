@@ -59,7 +59,7 @@ export default function MyTeamPage() {
         }
 
         // 3. All golfers so we can look up names/scores
-        const golfers = await syncLiveScoresToBucket();
+        const golfers = await syncLiveScoresToBucket(league.tournamentId);
         if (!cancelled) {
           setAllGolfers(golfers);
           console.log("allGolfers sample", golfers.slice(0, 5));
@@ -206,6 +206,12 @@ export default function MyTeamPage() {
           <div className="bb-leaderboard-loading">
             <Spinner animation="border" size="sm" />
             <span className="ms-2">Loading your team…</span>
+          </div>
+        )}
+
+        {!loading && !errorMsg && myGolfersSorted.length === 0 && (
+          <div className="bb-leaderboard-error">
+            The draft must be completed before your team appears here. Head to the Draftboard to get started.
           </div>
         )}
 

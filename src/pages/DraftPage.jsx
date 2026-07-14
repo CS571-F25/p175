@@ -39,16 +39,17 @@ export default function DraftPage() {
   const [draftError, setDraftError] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ---- Load golfers from bb-golfers ----
+  // ---- Load golfers from bb-golfers (waits for league so we have tournamentId) ----
   useEffect(() => {
-  let cancelled = false;
+    if (!league) return;
+    let cancelled = false;
 
-  async function loadGolfers() {
-    try {
-      setLoadingGolfers(true);
-      setErrorMsg("");
+    async function loadGolfers() {
+      try {
+        setLoadingGolfers(true);
+        setErrorMsg("");
 
-      const golfers = await getAllGolfers();
+        const golfers = await getAllGolfers(league.tournamentId);
         if (!cancelled) {
           setGolfersRaw(golfers);
         }
@@ -61,16 +62,14 @@ export default function DraftPage() {
         if (!cancelled) {
           setLoadingGolfers(false);
         }
-
-
       }
-  }
+    }
 
     loadGolfers();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [league]);
 
   // ---- Load teams for this league ----
   useEffect(() => {

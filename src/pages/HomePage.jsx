@@ -82,35 +82,40 @@ export default function HomePage() {
               </>
             ) : (
               <>
-                {userLeagues.map((league) => (
+                {userLeagues.length > 0 && (
+                  <div className="bb-home-pool-list">
+                    <p className="bb-home-pool-label">Your Pools</p>
+                    {userLeagues.map((league) => (
+                      <Link
+                        key={league.leagueId}
+                        to={`/league/${league.leagueId}`}
+                        className="bb-home-pool-item"
+                      >
+                        <span>{league.leagueName}</span>
+                        <span className="bb-home-pool-arrow">›</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                <div className="bb-home-pool-actions">
                   <Button
-                    key={league.leagueId}
                     as={Link}
-                    to={`/league/${league.leagueId}`}
-                    variant="primary"
-                    size="lg"
+                    to="/create-league"
+                    variant="outline-primary"
+                    size="sm"
                   >
-                    {league.leagueName}
+                    + Create a Pool
                   </Button>
-                ))}
-
-                <Button
-                  as={Link}
-                  to="/create-league"
-                  variant="outline-primary"
-                  size="lg"
-                >
-                  Create a Pool
-                </Button>
-
-                <Button
-                  as={Link}
-                  to="/join-league"
-                  size="lg"
-                  variant="outline-primary"
-                >
-                  Join a Pool
-                </Button>
+                  <Button
+                    as={Link}
+                    to="/join-league"
+                    size="sm"
+                    variant="outline-secondary"
+                  >
+                    Join a Pool
+                  </Button>
+                </div>
               </>
             )}
           </Col>
