@@ -3,10 +3,10 @@
 
 import React, { useMemo } from "react";
 
-const ROUNDS = 6; // 6 players per team
-
 export default function LiveDraftGrid({ draft, teams }) {
   if (!draft) return null;
+
+  const ROUNDS = draft.picksPerTeam ?? 6;
 
   const numTeams = draft.numberOfTeams || teams.length || 0;
   if (!numTeams) {
