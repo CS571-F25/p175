@@ -166,11 +166,18 @@ export async function makePickOnDraft({ draft, golfer, teams }) {
     throw new Error("Draft is already complete.");
   }
 
-  const { round, pickInRound, teamIndex } = computeSnakeSlot(
-    currentPick,
-    numberOfTeams
-  );
-  const teamId = draft.teamOrder[teamIndex];
+  const resolveTeamId = (pickNum) => {
+    if (Array.isArray(draft.customPickOrder)) {
+      return draft.customPickOrder[pickNum - 1] ?? null;
+    }
+    const { teamIndex } = computeSnakeSlot(pickNum, numberOfTeams);
+    return draft.teamOrder[teamIndex];
+  };
+
+  const teamId = resolveTeamId(currentPick);
+  const { round, pickInRound } = Array.isArray(draft.customPickOrder)
+    ? { round: currentPick, pickInRound: draft.customPickOrder.slice(0, currentPick).filter(id => id === teamId).length }
+    : computeSnakeSlot(currentPick, numberOfTeams);
 
   const newPick = {
     overallPick: currentPick,
@@ -195,8 +202,7 @@ export async function makePickOnDraft({ draft, golfer, teams }) {
     // draft done
     inProgress = false;
   } else {
-    const nextSlot = computeSnakeSlot(nextPickNumber, numberOfTeams);
-    const nextTeamId = draft.teamOrder[nextSlot.teamIndex];
+    const nextTeamId = resolveTeamId(nextPickNumber);
     const nextTeam = teams.find((t) => t.teamId === nextTeamId);
     currentUserIdPicking = nextTeam?.userId ?? null;
   }

@@ -43,8 +43,26 @@ export default function LiveDraftGrid({ draft, teams }) {
   }, [draft]);
 
   function buildColumnPicks(colIndex) {
-    const picks = [];
+    const teamId = orderedTeamIds[colIndex];
 
+    if (Array.isArray(draft.customPickOrder)) {
+      const picks = [];
+      let pickNumForTeam = 1;
+      draft.customPickOrder.forEach((tid, idx) => {
+        if (tid === teamId) {
+          picks.push({
+            round: pickNumForTeam,
+            pickInRound: pickNumForTeam,
+            overallPick: idx + 1,
+            label: `Pick ${pickNumForTeam}`,
+          });
+          pickNumForTeam++;
+        }
+      });
+      return picks;
+    }
+
+    const picks = [];
     for (let round = 1; round <= ROUNDS; round++) {
       let pickInRound;
       if (round % 2 === 1) {
